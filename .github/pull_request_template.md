@@ -1,5 +1,14 @@
-## Què he fet
-- 
+### Tipus
+- [ ] feat
+- [ ] fix
+- [ ] refactor
+- [ ] docs
+- [ ] test
+- [ ] chore
 
-## Què he provat
-- 
+### Què he fet
+
+
+### Funciona?
+- [ ] Sí
+- [ ] A mitges
