@@ -1,0 +1,25 @@
+/* Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@400;700&family=Fustat:wght@700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Commissioner', sans-serif;
+  background-color: #FAFAFA;
+  color: #0F172A;
+}
+
+/* Colors globals */
+:root {
+  --color-white: #FAFAFA;
+  --color-purple: #7C3AED;
+  --color-dark-blue: #0F172A;
+  --color-green: #22C55E;
+  --color-gray: #6B7280;
+}
+
+/* Titols */
+h1 { font-family: 'Fustat', sans-serif; font-size: 24px; }
+h2 { font-family: 'Commissioner', sans-serif; font-size: 20px; }
+h3 { font-family: 'Commissioner', sans-serif; font-size: 16px; }
+h4 { font-family: 'Commissioner', sans-serif; font-size: 14px; opacity: 0.65; }
+p  { font-family: 'Commissioner', sans-serif; font-size: 12px; }
