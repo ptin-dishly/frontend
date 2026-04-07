@@ -1,11 +1,11 @@
-/* Fonts */
+/* Fonts globals */
 @import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@400;700&family=Fustat:wght@700&display=swap');
 
 body {
   margin: 0;
   font-family: 'Commissioner', sans-serif;
-  background-color: #FAFAFA;
-  color: #0F172A;
+  background-color: var(--color-white);
+  color: var(--color-dark-blue);
 }
 
 /* Colors globals */
@@ -17,7 +17,18 @@ body {
   --color-gray: #6B7280;
 }
 
-/* Titols */
+/* Boxes de colors per TestPage */
+.color-box {
+  width: 50px;
+  height: 50px;
+}
+.color-box.white { background-color: var(--color-white); border: 1px solid #ccc; }
+.color-box.purple { background-color: var(--color-purple); }
+.color-box.dark-blue { background-color: var(--color-dark-blue); }
+.color-box.green { background-color: var(--color-green); }
+.color-box.gray { background-color: var(--color-gray); }
+
+/* Tipografies per títols */
 h1 { font-family: 'Fustat', sans-serif; font-size: 24px; }
 h2 { font-family: 'Commissioner', sans-serif; font-size: 20px; }
 h3 { font-family: 'Commissioner', sans-serif; font-size: 16px; }
