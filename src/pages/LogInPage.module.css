@@ -1,0 +1,75 @@
+/* 
+*****************************************
+/////////////// BLUE PANEL //////////////
+*****************************************
+*/ 
+.panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+
+  width: 100%;
+  height: 66vh;
+  box-sizing: border-box;
+  
+  background-color: var(--color-dark-blue);
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
+
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: hidden;
+}
+
+/* Pantalles petites (mòbil) */
+@media (max-width: 600px) {
+  .panel {
+    height: 70vh;
+    padding: 20px;
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+  }
+}
+
+/* 
+***********************************
+/////////////// FORM //////////////
+***********************************
+*/ 
+.form_style {
+    width: 100%;
+    max-width: 400px;
+    color: var(--color-white);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form_style label { 
+    text-align: left;
+    align-self: flex-start;
+    width: 100%;
+}
+
+.input {
+    padding: 10px;
+    border-radius: 30%;
+    border: none;
+    align-self: center;
+}
+
+.login-button {
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 30%;
+    background-color: var(--color-green);
+    color: var(--color-white);
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    align-self: center;
+
+}

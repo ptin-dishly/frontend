@@ -1,0 +1,37 @@
+/* Fonts globals */
+@import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@400;700&family=Fustat:wght@700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Commissioner', sans-serif;
+  background-color: var(--color-white);
+  color: var(--color-dark-blue);
+}
+
+/* Colors globals */
+:root {
+  --color-white: #FAFAFA;
+  --color-purple: #7C3AED;
+  --color-dark-blue: #0F172A;
+  --color-green: #22C55E;
+  --color-gray: #6B7280;
+}
+
+/* Boxes de colors per TestPage */
+.color-box {
+  width: 50px;
+  height: 50px;
+}
+.color-box.white { background-color: var(--color-white); border: 1px solid #ccc; }
+.color-box.purple { background-color: var(--color-purple); }
+.color-box.dark-blue { background-color: var(--color-dark-blue); }
+.color-box.green { background-color: var(--color-green); }
+.color-box.gray { background-color: var(--color-gray); }
+
+/* Tipografies per títols */
+h1 { font-family: 'Fustat', sans-serif; font-size: 24px; }
+h2 { font-family: 'Commissioner', sans-serif; font-size: 20px; }
+h3 { font-family: 'Commissioner', sans-serif; font-size: 16px; }
+h4 { font-family: 'Commissioner', sans-serif; font-size: 14px; opacity: 0.65; }
+p  { font-family: 'Commissioner', sans-serif; font-size: 12px; }
+p.bold-sm { font-family: 'Commissioner', sans-serif; font-size: 12px; font-weight: 700; }
