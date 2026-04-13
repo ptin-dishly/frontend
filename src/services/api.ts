@@ -91,6 +91,7 @@ export interface Allergen {
 export const allergenService = {
   list: () => api<{ success: boolean; data: Allergen[] }>("/allergens"),
   getById: (id: string) => api<{ success: boolean; data: Allergen }>(`/allergens/${id}`),
+  getByEuNumber: (euNumber: number) => api<{ success: boolean; data: Allergen }>(`/allergens/eu/${euNumber}`),
   search: (q: string) => api<{ success: boolean; data: Allergen[] }>(`/allergens/search?q=${encodeURIComponent(q)}`),
   create: (body: Omit<Allergen, "id" | "createdAt">) =>
     api<{ success: boolean; data: Allergen }>("/allergens", {

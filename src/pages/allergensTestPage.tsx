@@ -19,7 +19,7 @@ function authHeaders(token: string | null): Record<string, string> {
   return h;
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────────────── (unchanged)
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ResponseBox({ result }: { result: unknown }) {
   if (result === null) return null;
@@ -196,6 +196,11 @@ export default function AllergensTestPage() {
   const [getResult, setGetResult] = useState<unknown>(null);
   const [getLoading, setGetLoading] = useState(false);
 
+  const [getByEuNumberInput, setGetByEuNumberInput] = useState("");
+  const [getByEuNumberResult, setGetByEuNumberResult] = useState<unknown>(null);
+  const [getByEuNumberLoading, setGetByEuNumberLoading] = useState(false);
+
+
   const [createForm, setCreateForm] = useState({
     code: "GLU",
     nameEs: "Gluten",
@@ -303,6 +308,18 @@ export default function AllergensTestPage() {
       setGetResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setGetLoading(false);
+    }
+  }
+
+  async function handleGetByEuNumber() {
+    setGetByEuNumberLoading(true);
+    try {
+      const json = await allergenService.getByEuNumber(parseInt(getByEuNumberInput, 10));
+      setGetByEuNumberResult(json);
+    } catch (e) {
+      setGetByEuNumberResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setGetByEuNumberLoading(false);
     }
   }
 
@@ -485,6 +502,24 @@ export default function AllergensTestPage() {
             Obtenir
           </Btn>
           <ResponseBox result={getResult} />
+        </Card>
+        
+        <Card>
+          <SectionTitle title="GET /allergens/by-eu-number?euNumber= — Obtenir per número EU" tag="GET" />
+          <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b" }}>
+            Cercar per número EU (1–14)
+          </p>
+          <Input
+            label="Número EU"
+            value={getByEuNumberInput}
+            onChange={setGetByEuNumberInput}
+            placeholder="ex: 1, 7, 14..."
+            type="number"
+          />
+          <Btn onClick={handleGetByEuNumber} loading={getByEuNumberLoading} color="#16a34a">
+            Cercar per EU
+          </Btn>
+          <ResponseBox result={getByEuNumberResult} />
         </Card>
 
         <Card>
