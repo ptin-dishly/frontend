@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
-import { allergenService, sessionService, type Allergen, type APIError } from "../api";
+import { allergenService, sessionService, type Allergen } from "../services/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
