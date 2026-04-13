@@ -1,20 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { allergenService, sessionService, type Allergen, type APIError } from "../api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Allergen {
-  id: string;
-  code: string;
-  nameEs: string;
-  nameCa: string;
-  nameEn: string;
-  iconUrl: string | null;
-  description: string | null;
-  euNumber: number;
-  createdAt: string;
-}
 
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -24,10 +13,6 @@ interface ApiResponse<T = unknown> {
   meta?: { timestamp: string };
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function authHeaders(token: string | null): Record<string, string> {
@@ -36,7 +21,7 @@ function authHeaders(token: string | null): Record<string, string> {
   return h;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Sub-components ─────────────────────────────────────────────────────────── (unchanged)
 
 function ResponseBox({ result }: { result: unknown }) {
   if (result === null) return null;
@@ -185,7 +170,6 @@ function Btn({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AllergensTestPage() {
-  // ── Shared auth state ──
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
 
@@ -235,20 +219,17 @@ export default function AllergensTestPage() {
   async function handleLogin() {
     setLoginLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/sessions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-      });
-      const json: ApiResponse<{ accessToken: string; refreshToken: string }> = await res.json();
+      const json = await sessionService.login(loginEmail, loginPassword);
       setLoginResult(json);
       if (json.success && json.data) {
+        localStorage.setItem("accessToken", json.data.accessToken);
+        localStorage.setItem("refreshToken", json.data.refreshToken);
         setAccessToken(json.data.accessToken);
         setRefreshToken(json.data.refreshToken);
         setRefreshInput(json.data.refreshToken);
       }
     } catch (e) {
-      setLoginResult({ error: String(e) });
+      setLoginResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setLoginLoading(false);
     }
@@ -257,20 +238,17 @@ export default function AllergensTestPage() {
   async function handleRefresh() {
     setRefreshLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/sessions`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: refreshInput || refreshToken }),
-      });
-      const json: ApiResponse<{ accessToken: string; refreshToken: string }> = await res.json();
+      const json = await sessionService.refresh(refreshInput || refreshToken);
       setRefreshResult(json);
       if (json.success && json.data) {
+        localStorage.setItem("accessToken", json.data.accessToken);
+        localStorage.setItem("refreshToken", json.data.refreshToken);
         setAccessToken(json.data.accessToken);
         setRefreshToken(json.data.refreshToken);
         setRefreshInput(json.data.refreshToken);
       }
     } catch (e) {
-      setRefreshResult({ error: String(e) });
+      setRefreshResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setRefreshLoading(false);
     }
@@ -279,18 +257,16 @@ export default function AllergensTestPage() {
   async function handleLogout() {
     setLogoutLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/sessions`, {
-        method: "DELETE",
-        headers: authHeaders(accessToken),
-      });
-      const json = await res.json();
+      const json = await sessionService.logout();
       setLogoutResult(json);
       if (json.success) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         setAccessToken("");
         setRefreshToken("");
       }
     } catch (e) {
-      setLogoutResult({ error: String(e) });
+      setLogoutResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setLogoutLoading(false);
     }
@@ -299,12 +275,10 @@ export default function AllergensTestPage() {
   async function handleList() {
     setListLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/allergens`, {
-        headers: authHeaders(accessToken),
-      });
-      setListResult(await res.json());
+      const json = await allergenService.list();
+      setListResult(json);
     } catch (e) {
-      setListResult({ error: String(e) });
+      setListResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setListLoading(false);
     }
@@ -313,13 +287,10 @@ export default function AllergensTestPage() {
   async function handleSearch() {
     setSearchLoading(true);
     try {
-      const res = await fetch(
-        `${BASE_URL}/allergens/search?q=${encodeURIComponent(searchQ)}`,
-        { headers: authHeaders(accessToken) }
-      );
-      setSearchResult(await res.json());
+      const json = await allergenService.search(searchQ);
+      setSearchResult(json);
     } catch (e) {
-      setSearchResult({ error: String(e) });
+      setSearchResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setSearchLoading(false);
     }
@@ -328,12 +299,10 @@ export default function AllergensTestPage() {
   async function handleGetById() {
     setGetLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/allergens/${getIdInput}`, {
-        headers: authHeaders(accessToken),
-      });
-      setGetResult(await res.json());
+      const json = await allergenService.getById(getIdInput);
+      setGetResult(json);
     } catch (e) {
-      setGetResult({ error: String(e) });
+      setGetResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setGetLoading(false);
     }
@@ -342,29 +311,22 @@ export default function AllergensTestPage() {
   async function handleCreate() {
     setCreateLoading(true);
     try {
-      const body: Record<string, unknown> = {
+      const json = await allergenService.create({
         code: createForm.code,
         nameEs: createForm.nameEs,
         nameCa: createForm.nameCa,
         nameEn: createForm.nameEn,
         euNumber: parseInt(createForm.euNumber, 10),
-      };
-      if (createForm.iconUrl) body.iconUrl = createForm.iconUrl;
-      if (createForm.description) body.description = createForm.description;
-
-      const res = await fetch(`${BASE_URL}/allergens`, {
-        method: "POST",
-        headers: authHeaders(accessToken),
-        body: JSON.stringify(body),
+        iconUrl: createForm.iconUrl || null,
+        description: createForm.description || null,
       });
-      const json: ApiResponse<Allergen> = await res.json();
       setCreateResult(json);
       if (json.success && json.data) {
         setGetIdInput(json.data.id);
         setDeleteIdInput(json.data.id);
       }
     } catch (e) {
-      setCreateResult({ error: String(e) });
+      setCreateResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setCreateLoading(false);
     }
@@ -373,13 +335,10 @@ export default function AllergensTestPage() {
   async function handleDelete() {
     setDeleteLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/allergens/${deleteIdInput}`, {
-        method: "DELETE",
-        headers: authHeaders(accessToken),
-      });
-      setDeleteResult(await res.json());
+      const json = await allergenService.delete(deleteIdInput);
+      setDeleteResult(json);
     } catch (e) {
-      setDeleteResult({ error: String(e) });
+      setDeleteResult({ success: false, error: { code: "ERROR", message: String(e) } });
     } finally {
       setDeleteLoading(false);
     }
@@ -397,7 +356,6 @@ export default function AllergensTestPage() {
       }}
     >
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#0f172a" }}>
             🍽️ Dishly — API Test Page
@@ -407,7 +365,6 @@ export default function AllergensTestPage() {
           </p>
         </div>
 
-        {/* Token status */}
         <div
           style={{
             background: accessToken ? "#f0fdf4" : "#fef9c3",
@@ -431,7 +388,6 @@ export default function AllergensTestPage() {
           )}
         </div>
 
-        {/* ── SESSIONS ── */}
         <h2
           style={{
             fontSize: 13,
@@ -480,7 +436,6 @@ export default function AllergensTestPage() {
           <ResponseBox result={logoutResult} />
         </Card>
 
-        {/* ── ALLERGENS ── */}
         <h2
           style={{
             fontSize: 13,
