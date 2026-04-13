@@ -3,7 +3,6 @@ import TestPage from "../pages/TestPage";
 import DishCard from "../components/DishCard";
 import LogInPage from "../pages/LogInPage";
 import MainPage from "../pages/MainPage";
-import AllergensTestPage from "../pages/allergensTestPage";
 
 export function AppRoutes() {
   return (
@@ -14,9 +13,6 @@ export function AppRoutes() {
   
         {/* Ruta per TestPage */}
         <Route path="/test" element={<TestPage />} />
-
-        {/* Ruta per AllergensTestPage */}
-        <Route path="/allergens-test" element={<AllergensTestPage />} />
         
         {/* Ruta per MainPage */}
         <Route path="/main" element={<MainPage />} />
