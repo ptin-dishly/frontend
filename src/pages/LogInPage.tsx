@@ -8,7 +8,7 @@ export default function LogIn() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        navigate("/main");
+        navigate("/dashboard");
     };
 
     return (    
