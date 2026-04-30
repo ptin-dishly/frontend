@@ -1,4 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import type { IconType } from "react-icons";
+import {
+  FaCalendarCheck,
+  FaClipboardList,
+} from "react-icons/fa6";
+import { GiCardboardBoxClosed } from "react-icons/gi";
+import { BsForkKnife } from "react-icons/bs";
+import { RxDashboard } from "react-icons/rx";
 import Logo from "./Logo";
 
 interface MenuBarProps {
@@ -48,59 +57,70 @@ export default function MenuBar({ role }: MenuBarProps) {
   return (
     <div
       style={{
-        width: "clamp(200px, 26vw, 250px)",
-        maxWidth: "100vw",
-        backgroundColor: "#0F172A", // var(--color-dark-blue)
-        height: "100dvh",
+        width: 250,
+        backgroundColor: "var(--color-dark-blue)",
+        height: "100vh",
         padding: 20,
-        boxSizing: "border-box",
         borderTopRightRadius: 50,
         borderBottomRightRadius: 50,
         color: "white",
         display: "flex",
         flexDirection: "column",
-        gap: 16,
-        overflow: "hidden",
+        gap: 25,
+        overflowY: "hidden",
       }}
     >
-      {/* Logo */}
-      <div style={{ textAlign: "center", marginBottom: 8, marginTop: 8 }}>
-        <Logo />
+      {/* Logo: absolute inside a fixed-height wrapper so buttons don't shift */}
+      <div style={{ position: "relative", height: 220 }}>
+        <div style={{ position: "absolute", top: 80, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+          <Logo />
+        </div>
       </div>
 
       {/* Menu Items */}
       <div
         style={{
+          marginTop: 40,
+          overflowY: "auto",
+          maxHeight: "calc(100vh - 260px)",
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          overflowY: "auto",
-          minHeight: 0,
-          paddingRight: 4,
         }}
       >
-        {items.map((item) => (
-          <button
-            key={item.route}
-            type="button"
-            onClick={() => navigate(item.route)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              width: "100%",
-              padding: "12px 15px",
-              borderRadius: 10,
-              border: "none",
-              background: "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              transition: "0.2s",
-              textAlign: "left",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{item.label}</span>
-          </button>
-        ))}
+        {items.map((item) => {
+          const ItemIcon = item.icon;
+          const isActive = activePath === item.route;
+          const isHovered = hovered === item.route;
+
+          return (
+            <button
+              key={item.route}
+              type="button"
+              onMouseEnter={() => setHovered(item.route)}
+              onMouseLeave={() => setHovered(null)}
+              onClick={() => navigate(item.route)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                padding: "20px 20px",
+                borderRadius: 20,
+                border: "none",
+                background: isActive ? "var(--color-white)" : isHovered ? "#f5f5f7" : "transparent",
+                color: isActive || isHovered ? "var(--color-purple)" : "white",
+                cursor: "pointer",
+                transition: "background 0.2s, color 0.2s",
+                textAlign: "left",
+                fontWeight: isActive ? 600 : 400,
+              }}
+            >
+              <ItemIcon size={24} color={isActive || isHovered ? "var(--color-purple)" : "white"} />
+              <span style={{ fontSize: 16 }}>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
