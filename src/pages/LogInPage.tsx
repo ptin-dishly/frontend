@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../components/Logo";
+import logoII from "../assets/logo_II.png";
 import login_style from "./LogInPage.module.css"
 
 export default function LogIn() {
@@ -13,10 +13,8 @@ export default function LogIn() {
     };
 
     return (    
-        <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "34vh" }}>
-                <Logo size={1.5} />
-            </div>
+        <div style={{ textAlign: "center", marginTop: "40px" }}>
+            <img src={logoII} alt="Logo" style={{ width: "235 px", height: "100px" }} />
              <div className={login_style.panel}> {
                 <form className={login_style.form_style} onSubmit={handleSubmit}>
                     <h2>Log In</ h2>
