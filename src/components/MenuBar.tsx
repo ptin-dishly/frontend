@@ -1,20 +1,26 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import type { IconType } from "react-icons";
+import { RxDashboard } from "react-icons/rx";
+import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
+import { GiCardboardBoxClosed } from "react-icons/gi";
+import { BsForkKnife } from "react-icons/bs";
 import Logo from "./Logo";
 
 interface MenuBarProps {
   role: "admin" | "kitchen" | "waiter" | "host";
 }
 
+type MenuItem = {
+  label: string;
+  route: string;
+  icon: IconType;
+};
+
 export default function MenuBar({ role }: MenuBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [hovered, setHovered] = useState<string | null>(null);
-
-  type MenuItem = {
-    label: string;
-    route: string;
-    icon: IconType;
-  };
 
   const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
@@ -41,8 +47,6 @@ export default function MenuBar({ role }: MenuBarProps) {
   };
 
   const items = menuItemsByRole[role] ?? [];
-
-  // Ruta activa: si estem a "/", tractem-la com "/dashboard"
   const activePath = location.pathname === "/" ? "/dashboard" : location.pathname;
 
   return (
@@ -50,7 +54,7 @@ export default function MenuBar({ role }: MenuBarProps) {
       style={{
         width: "clamp(200px, 26vw, 250px)",
         maxWidth: "100vw",
-        backgroundColor: "#0F172A", // var(--color-dark-blue)
+        backgroundColor: "#0F172A",
         height: "100dvh",
         padding: 20,
         boxSizing: "border-box",
@@ -63,12 +67,10 @@ export default function MenuBar({ role }: MenuBarProps) {
         overflow: "hidden",
       }}
     >
-      {/* Logo */}
       <div style={{ textAlign: "center", marginBottom: 8, marginTop: 8 }}>
         <Logo />
       </div>
 
-      {/* Menu Items */}
       <div
         style={{
           display: "flex",
@@ -79,28 +81,41 @@ export default function MenuBar({ role }: MenuBarProps) {
           paddingRight: 4,
         }}
       >
-        {items.map((item) => (
-          <button
-            key={item.route}
-            type="button"
-            onClick={() => navigate(item.route)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              width: "100%",
-              padding: "12px 15px",
-              borderRadius: 10,
-              border: "none",
-              background: "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              transition: "0.2s",
-              textAlign: "left",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{item.label}</span>
-          </button>
-        ))}
+        {items.map((item) => {
+          const isActive = activePath === item.route;
+          const isHovered = hovered === item.route;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.route}
+              type="button"
+              onClick={() => navigate(item.route)}
+              onMouseEnter={() => setHovered(item.route)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                padding: "12px 15px",
+                borderRadius: 10,
+                border: "none",
+                background: isActive
+                  ? "var(--color-purple)"
+                  : isHovered
+                  ? "rgba(255,255,255,0.08)"
+                  : "transparent",
+                color: "inherit",
+                cursor: "pointer",
+                transition: "background 0.2s",
+                textAlign: "left",
+              }}
+            >
+              <Icon style={{ fontSize: 18, flexShrink: 0 }} />
+              <span style={{ fontSize: 15 }}>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
