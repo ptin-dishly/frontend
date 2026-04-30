@@ -9,5 +9,4 @@ export default function Logo() {
             </h1>
         </div>
     );
-
 }

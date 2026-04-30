@@ -2,43 +2,48 @@ import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 
 interface MenuBarProps {
-  role: "admin" | "kitchen" | "waiter" ; // Afegiu els que calguin
+  role: "admin" | "kitchen" | "waiter" | "host";
 }
 
 export default function MenuBar({ role }: MenuBarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [hovered, setHovered] = useState<string | null>(null);
 
-  // Menú segons el rol de l’usuari
-  const menuItemsByRole: Record<string, { label: string; route: string }[]> = {
+  type MenuItem = {
+    label: string;
+    route: string;
+    icon: IconType;
+  };
+
+  const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
-      { label: "Dashboard", route: "/dashboard" },
-      { label: "Orders & Tickets", route: "/orders" },
-      { label: "Restaurant Map", route: "/map" },
-      { label: "Bookings", route: "/bookings" },
-      { label: "Ingredients' Stock", route: "/stock" },
-      { label: "Dishes List", route: "/dishes" },
+      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
+      { label: "Tickets", route: "/orders", icon: FaClipboardList },
+      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
+      { label: "Ingredients' Stock", route: "/stock", icon: GiCardboardBoxClosed },
+      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
     ],
-
     kitchen: [
-      { label: "Orders & Tickets", route: "/orders" },
-      { label: "Ingredients' Stock", route: "/stock" },
-      { label: "Dishes List", route: "/dishes" },
+      { label: "Tickets", route: "/orders", icon: FaClipboardList },
+      { label: "Ingredients' Stock", route: "/stock", icon: GiCardboardBoxClosed },
+      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
     ],
-
     waiter: [
-      { label: "Dashboard", route: "/dashboard" },
-      { label: "Restaurant Map", route: "/map" },
-      { label: "Bookings", route: "/bookings" },
+      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
+      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
     ],
-
-    manager: [
-      { label: "Dashboard", route: "/dashboard" },
-      { label: "Bookings", route: "/bookings" },
-      { label: "Dishes List", route: "/dishes" },
+    host: [
+      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
+      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
+      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
     ],
   };
 
   const items = menuItemsByRole[role] ?? [];
+
+  // Ruta activa: si estem a "/", tractem-la com "/dashboard"
+  const activePath = location.pathname === "/" ? "/dashboard" : location.pathname;
 
   return (
     <div
