@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { allergenService, Allergen } from "../services/api";
 
 const colors = {
   white: "#FAFAFA",
@@ -8,32 +9,35 @@ const colors = {
   gray: "#6B7280",
 };
 
-const allergensList = [
-  "Gluten",
-  "Crustacis",
-  "Ous",
-  "Peix",
-  "Cacauets",
-  "Soja",
-  "Llet",
-  "Fruits secs",
-  "Api",
-  "Mostassa",
-  "Sèsam",
-  "Sulfits",
-  "Tramussos",
-  "Mol·luscs",
-];
-
 const AllergensDropdown = () => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [allergens, setAllergens] = useState<Allergen[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const toggleAllergen = (allergen: string) => {
-    if (selected.includes(allergen)) {
-      setSelected(selected.filter((a) => a !== allergen));
+  // 🔥 Cargar alérgenos desde la API
+  useEffect(() => {
+    const fetchAllergens = async () => {
+      try {
+        setLoading(true);
+        const res = await allergenService.list();
+        setAllergens(res.data);
+      } catch (error) {
+        console.error("Error cargando alérgenos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllergens();
+  }, []);
+
+  // ✅ Seleccionar / deseleccionar
+  const toggleAllergen = (id: string) => {
+    if (selected.includes(id)) {
+      setSelected(selected.filter((a) => a !== id));
     } else {
-      setSelected([...selected, allergen]);
+      setSelected([...selected, id]);
     }
   };
 
@@ -89,20 +93,27 @@ const AllergensDropdown = () => {
 
       {open && (
         <div style={dropdownStyle}>
-          {allergensList.map((allergen) => {
-            const isSelected = selected.includes(allergen);
+          {loading && <p>Cargando...</p>}
 
-            return (
-              <label key={allergen} style={itemStyle(isSelected)}>
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleAllergen(allergen)}
-                />
-                {allergen}
-              </label>
-            );
-          })}
+          {!loading && allergens.length === 0 && (
+            <p>No hay alérgenos</p>
+          )}
+
+          {!loading &&
+            allergens.map((allergen) => {
+              const isSelected = selected.includes(allergen.id);
+
+              return (
+                <label key={allergen.id} style={itemStyle(isSelected)}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleAllergen(allergen.id)}
+                  />
+                  {allergen.nameCa} {/* puedes cambiar a nameEs o nameEn */}
+                </label>
+              );
+            })}
         </div>
       )}
     </div>
