@@ -5,13 +5,7 @@ import { RxDashboard } from "react-icons/rx";
 import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
 import { GiCardboardBoxClosed } from "react-icons/gi";
 import { BsForkKnife } from "react-icons/bs";
-import {
-  FaCalendarCheck,
-  FaClipboardList,
-} from "react-icons/fa6";
-import { GiCardboardBoxClosed } from "react-icons/gi";
-import { BsForkKnife } from "react-icons/bs";
-import { RxDashboard } from "react-icons/rx";
+import { MdMenuBook } from "react-icons/md";
 import Logo from "./Logo";
 
 interface MenuBarProps {
@@ -34,22 +28,27 @@ export default function MenuBar({ role }: MenuBarProps) {
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
       { label: "Tickets", route: "/orders", icon: FaClipboardList },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Ingredients' Stock", route: "/stock", icon: GiCardboardBoxClosed },
+      { label: "Ingredients' Stock", route: "/ingredients", icon: GiCardboardBoxClosed },
       { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
+      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
     ],
     kitchen: [
       { label: "Tickets", route: "/orders", icon: FaClipboardList },
-      { label: "Ingredients' Stock", route: "/stock", icon: GiCardboardBoxClosed },
+      { label: "Ingredients' Stock", route: "/ingredients", icon: GiCardboardBoxClosed },
       { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
+      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
     ],
     waiter: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
+      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
+      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
     ],
     host: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
       { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
+      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
     ],
   };
 
