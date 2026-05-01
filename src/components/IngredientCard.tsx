@@ -45,7 +45,29 @@ export default function IngredientCard({
           marginBottom: 10,
         }}
       >
-        {category}&nbsp;&nbsp;{name}
+        <div style={{ textAlign: "left", marginBottom: 10 }}>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#7C3AED",
+              textTransform: "uppercase",
+              marginRight: 8,
+            }}
+          >
+            {category}
+          </span>
+
+          <span
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            {name}
+          </span>
+        </div>
       </div>
 
       <div
