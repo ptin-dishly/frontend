@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { allergenService, Allergen } from "../services/api";
+import { allergenService, type Allergen } from "../services/api";
 
 const colors = {
   white: "#FAFAFA",

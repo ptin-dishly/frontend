@@ -1,10 +1,29 @@
 import React, { useState } from "react";
+import {
+  allergenService,
+  sessionService,
+  userService,
+  recipeService,
+  type Allergen,
+  type User,
+  type Recipe,
+} from "../services/api";
 import DishCard from "../components/DishCard";
 import OrderCard from "../components/OrderCard";
 import TicketCard from "../components/TicketCard";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
 import CounterInput from "../components/CounterInput";
+import Notification from "../components/Notification";
+import NewIngredientCard from "../components/NewIngredientCard";
+import IngredientCard from "../components/IngredientCard";
+import MenuBar from "../components/MenuBar";
+import CategoryBar from "../components/ConjuntButton";
+import BackButton from "../components/BackButton";
+import BigButton from "../components/BigButton";
+import AllergensDropdown from "../components/AlergensDesplegables";
+import ResponseBox from "../components/ResponseBox";
+import Btn from "../components/Btn";
 import sampleImage from "../assets/imagen.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,36 +37,6 @@ interface ApiResponse<T = unknown> {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function ResponseBox({ result }: { result: unknown }) {
-  if (result === null) return null;
-  const isError =
-    typeof result === "object" &&
-    result !== null &&
-    "success" in result &&
-    (result as ApiResponse).success === false;
-
-  return (
-    <pre
-      style={{
-        marginTop: 12,
-        padding: "12px 16px",
-        borderRadius: 8,
-        background: isError ? "#fff1f0" : "#f0fdf4",
-        border: `1px solid ${isError ? "#fca5a5" : "#86efac"}`,
-        color: isError ? "#b91c1c" : "#166534",
-        fontSize: 13,
-        overflowX: "auto",
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-all",
-        maxHeight: 320,
-        overflowY: "auto",
-      }}
-    >
-      {JSON.stringify(result, null, 2)}
-    </pre>
-  );
-}
 
 function SectionTitle({ title, tag }: { title: string; tag: string }) {
   const tagColors: Record<string, string> = {
@@ -130,45 +119,269 @@ function Input({
   );
 }
 
-function Btn({
-  onClick,
-  loading,
-  children,
-  color = "#2563eb",
-}: {
-  onClick: () => void;
-  loading: boolean;
-  children: React.ReactNode;
-  color?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      style={{
-        marginTop: 8,
-        padding: "8px 18px",
-        background: loading ? "#94a3b8" : color,
-        color: "#fff",
-        border: "none",
-        borderRadius: 6,
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: loading ? "not-allowed" : "pointer",
-        transition: "background 0.15s",
-      }}
-    >
-      {loading ? "Carregant…" : children}
-    </button>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TestPage() {
+  const [currentTab, setCurrentTab] = useState<"design" | "api">("design");
+  const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
+
+  // ── Component States ──
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState("");
   const [count, setCount] = useState(1);
+
+  // ── Sessions ──
+  const [loginEmail, setLoginEmail] = useState("marc@calblay.cat");
+  const [loginPassword, setLoginPassword] = useState("secret123");
+  const [loginResult, setLoginResult] = useState<unknown>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const [refreshInput, setRefreshInput] = useState("");
+  const [refreshResult, setRefreshResult] = useState<unknown>(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
+
+  const [logoutResult, setLogoutResult] = useState<unknown>(null);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  // ── Allergens ──
+  const [listResult, setListResult] = useState<unknown>(null);
+  const [listLoading, setListLoading] = useState(false);
+
+  const [searchQ, setSearchQ] = useState("");
+  const [searchResult, setSearchResult] = useState<unknown>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const [getIdInput, setGetIdInput] = useState("");
+  const [getResult, setGetResult] = useState<unknown>(null);
+  const [getLoading, setGetLoading] = useState(false);
+
+  const [getByEuNumberInput, setGetByEuNumberInput] = useState("");
+  const [getByEuNumberResult, setGetByEuNumberResult] = useState<unknown>(null);
+  const [getByEuNumberLoading, setGetByEuNumberLoading] = useState(false);
+
+  const [createForm, setCreateForm] = useState({
+    code: "GLU",
+    nameEs: "Gluten",
+    nameCa: "Gluten",
+    nameEn: "Gluten",
+    euNumber: "1",
+    iconUrl: "",
+    description: "",
+  });
+  const [createResult, setCreateResult] = useState<unknown>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+
+  const [deleteIdInput, setDeleteIdInput] = useState("");
+  const [deleteResult, setDeleteResult] = useState<unknown>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ── Users ──
+  const [userIdInput, setUserIdInput] = useState("");
+  const [userResult, setUserResult] = useState<unknown>(null);
+  const [userLoading, setUserLoading] = useState(false);
+
+  const [deleteUserIdInput, setDeleteUserIdInput] = useState("");
+  const [deleteUserResult, setDeleteUserResult] = useState<unknown>(null);
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+
+  // ── Recipes ──
+  const [recipeIdInput, setRecipeIdInput] = useState("");
+  const [recipeResult, setRecipeResult] = useState<unknown>(null);
+  const [recipeLoading, setRecipeLoading] = useState(false);
+
+  const [recipeAllResult, setRecipeAllResult] = useState<unknown>(null);
+  const [recipeAllLoading, setRecipeAllLoading] = useState(false);
+
+  // ── Handlers ──
+
+  async function handleLogin() {
+    setLoginLoading(true);
+    try {
+      const json = await sessionService.login(loginEmail, loginPassword);
+      setLoginResult(json);
+      if (json.success && json.data) {
+        localStorage.setItem("accessToken", json.data.accessToken);
+        localStorage.setItem("refreshToken", json.data.refreshToken);
+        setAccessToken(json.data.accessToken);
+        setRefreshToken(json.data.refreshToken);
+        setRefreshInput(json.data.refreshToken);
+      }
+    } catch (e) {
+      setLoginResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  async function handleRefresh() {
+    setRefreshLoading(true);
+    try {
+      const json = await sessionService.refresh(refreshInput || refreshToken);
+      setRefreshResult(json);
+      if (json.success && json.data) {
+        localStorage.setItem("accessToken", json.data.accessToken);
+        localStorage.setItem("refreshToken", json.data.refreshToken);
+        setAccessToken(json.data.accessToken);
+        setRefreshToken(json.data.refreshToken);
+        setRefreshInput(json.data.refreshToken);
+      }
+    } catch (e) {
+      setRefreshResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setRefreshLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    setLogoutLoading(true);
+    try {
+      const json = await sessionService.logout();
+      setLogoutResult(json);
+      if (json.success) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        setAccessToken("");
+        setRefreshToken("");
+      }
+    } catch (e) {
+      setLogoutResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setLogoutLoading(false);
+    }
+  }
+
+  async function handleList() {
+    setListLoading(true);
+    try {
+      const json = await allergenService.list();
+      setListResult(json);
+    } catch (e) {
+      setListResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setListLoading(false);
+    }
+  }
+
+  async function handleSearch() {
+    setSearchLoading(true);
+    try {
+      const json = await allergenService.search(searchQ);
+      setSearchResult(json);
+    } catch (e) {
+      setSearchResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setSearchLoading(false);
+    }
+  }
+
+  async function handleGetById() {
+    setGetLoading(true);
+    try {
+      const json = await allergenService.getById(getIdInput);
+      setGetResult(json);
+    } catch (e) {
+      setGetResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setGetLoading(false);
+    }
+  }
+
+  async function handleGetByEuNumber() {
+    setGetByEuNumberLoading(true);
+    try {
+      const json = await allergenService.getByEuNumber(parseInt(getByEuNumberInput, 10));
+      setGetByEuNumberResult(json);
+    } catch (e) {
+      setGetByEuNumberResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setGetByEuNumberLoading(false);
+    }
+  }
+
+  async function handleCreate() {
+    setCreateLoading(true);
+    try {
+      const json = await allergenService.create({
+        code: createForm.code,
+        nameEs: createForm.nameEs,
+        nameCa: createForm.nameCa,
+        nameEn: createForm.nameEn,
+        euNumber: parseInt(createForm.euNumber, 10),
+        iconUrl: createForm.iconUrl || null,
+        description: createForm.description || null,
+      });
+      setCreateResult(json);
+      if (json.success && json.data) {
+        setGetIdInput(json.data.id);
+        setDeleteIdInput(json.data.id);
+      }
+    } catch (e) {
+      setCreateResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleteLoading(true);
+    try {
+      const json = await allergenService.delete(deleteIdInput);
+      setDeleteResult(json);
+    } catch (e) {
+      setDeleteResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  async function handleGetUser() {
+    setUserLoading(true);
+    try {
+      const json = await userService.getById(userIdInput);
+      setUserResult(json);
+    } catch (e) {
+      setUserResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setUserLoading(false);
+    }
+  }
+
+  async function handleDeleteUser() {
+    setDeleteUserLoading(true);
+    try {
+      const json = await userService.delete(deleteUserIdInput);
+      setDeleteUserResult(json);
+    } catch (e) {
+      setDeleteUserResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setDeleteUserLoading(false);
+    }
+  }
+
+  async function handleGetRecipe() {
+    setRecipeLoading(true);
+    try {
+      const json = await recipeService.getById(recipeIdInput);
+      setRecipeResult(json);
+    } catch (e) {
+      setRecipeResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setRecipeLoading(false);
+    }
+  }
+
+  async function handleGetAllRecipes() {
+    setRecipeAllLoading(true);
+    try {
+      const json = await recipeService.getAll();
+      setRecipeAllResult(json);
+    } catch (e) {
+      setRecipeAllResult({ success: false, error: { code: "ERROR", message: String(e) } });
+    } finally {
+      setRecipeAllLoading(false);
+    }
+  }
 
   const sampleOrderItems = [
     { id: "1", name: "Amanida de Formatge", quantity: 1, price: 12.5 },
@@ -181,73 +394,382 @@ export default function TestPage() {
   ];
 
   return (
-    <div style={{ padding: 20 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginBottom: 30,
-        }}
-      >
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Value"
-        />
+    <div
+      style={{
+        fontFamily: "'Inter', system-ui, sans-serif",
+        background: "#f8fafc",
+        minHeight: "100vh",
+        padding: "32px 16px",
+      }}
+    >
+      <div style={{ maxWidth: 760, margin: "0 auto" }}>
+        <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#0f172a" }}>
+              🍽️ Dishly — Test Page
+            </h1>
+            <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: 14 }}>
+              Prova dels endpoints de l'API v0.1.0 · Cal Blay
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => setCurrentTab("design")}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                border: "1px solid #cbd5e1",
+                background: currentTab === "design" ? "#2563eb" : "#fff",
+                color: currentTab === "design" ? "#fff" : "#475569",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Design
+            </button>
+            <button
+              onClick={() => setCurrentTab("api")}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                border: "1px solid #cbd5e1",
+                background: currentTab === "api" ? "#2563eb" : "#fff",
+                color: currentTab === "api" ? "#fff" : "#475569",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              API Test
+            </button>
+          </div>
+        </div>
+
+        {currentTab === "design" && (
+          <>
+            <h2>Components Testing</h2>
+            <SearchBar value={search} onChange={setSearch} placeholder="Search..." />
+            <SelectDropdown
+              value={selected}
+              onChange={setSelected}
+              options={[
+                { label: "Option 1", value: "1" },
+                { label: "Option 2", value: "2" },
+              ]}
+            />
+            <CounterInput value={count} onChange={setCount} />
+            <DishCard name="Lasanya" image={sampleImage} />
+            <OrderCard orderId="123" tableNumber="5" items={sampleOrderItems} total={50} />
+            <TicketCard ticketId="456" orderId="123" tableNumber="5" items={sampleTicketItems} total={50} paymentMethod="Card" paymentDate="Today" />
+            <Notification />
+            <NewIngredientCard />
+            <IngredientCard
+              category="Vegetable"
+              name="Carrot"
+              image={sampleImage}
+              quantity="10kg"
+              expiration="Expires in 3 days"
+            />
+            <MenuBar role="admin" />
+            <CategoryBar />
+            <BackButton label="Go Back" />
+            <BigButton label="Big Button" value="42" />
+            <AllergensDropdown />
+          </>
+        )}
+
+        {currentTab === "api" && (
+          <>
+            <div
+              style={{
+                background: accessToken ? "#f0fdf4" : "#fef9c3",
+                border: `1px solid ${accessToken ? "#86efac" : "#fde047"}`,
+                borderRadius: 8,
+                padding: "10px 16px",
+                marginBottom: 24,
+                fontSize: 13,
+                color: accessToken ? "#166534" : "#854d0e",
+              }}
+            >
+              {accessToken ? (
+                <>
+                  ✅ <strong>Access token actiu</strong> ·{" "}
+                  <span style={{ fontFamily: "monospace" }}>
+                    {accessToken.slice(0, 30)}…
+                  </span>
+                </>
+              ) : (
+                <>⚠️ Cap token actiu — fes login primer per als endpoints autenticats</>
+              )}
+            </div>
+
+            <h2
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
+            >
+              Sessions
+            </h2>
+
+            <Card>
+              <SectionTitle title="POST /sessions — Login" tag="POST" />
+              <Input label="Email" value={loginEmail} onChange={setLoginEmail} placeholder="marc@calblay.cat" type="email" />
+              <Input label="Password" value={loginPassword} onChange={setLoginPassword} placeholder="secret123" type="password" />
+              <Btn onClick={handleLogin} loading={loginLoading} color="#2563eb">
+                Login
+              </Btn>
+              <ResponseBox result={loginResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="PUT /sessions — Refresh token" tag="PUT" />
+              <Input
+                label="Refresh Token"
+                value={refreshInput}
+                onChange={setRefreshInput}
+                placeholder="S'omple automàticament al fer login"
+              />
+              <Btn onClick={handleRefresh} loading={refreshLoading} color="#d97706">
+                Refresh
+              </Btn>
+              <ResponseBox result={refreshResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="DELETE /sessions — Logout" tag="DELETE" />
+              <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b" }}>
+                Requereix Authorization: Bearer &lt;accessToken&gt;
+              </p>
+              <Btn onClick={handleLogout} loading={logoutLoading} color="#dc2626">
+                Logout
+              </Btn>
+              <ResponseBox result={logoutResult} />
+            </Card>
+
+            <h2
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                marginBottom: 12,
+                marginTop: 24,
+              }}
+            >
+              Al·lèrgens
+            </h2>
+
+            <Card>
+              <SectionTitle title="GET /allergens — Llistar tots" tag="GET" />
+              <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b" }}>
+                Retorna els 14 al·lèrgens regulats per la UE ordenats per número EU.
+              </p>
+              <Btn onClick={handleList} loading={listLoading} color="#16a34a">
+                Llistar
+              </Btn>
+              <ResponseBox result={listResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="GET /allergens/search?q= — Cercar" tag="GET" />
+              <Input
+                label="Terme de cerca (mínim 2 caràcters)"
+                value={searchQ}
+                onChange={setSearchQ}
+                placeholder="ex: Glu"
+              />
+              <Btn onClick={handleSearch} loading={searchLoading} color="#16a34a">
+                Cercar
+              </Btn>
+              <ResponseBox result={searchResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="GET /allergens/:id — Obtenir per ID" tag="GET" />
+              <Input
+                label="UUID de l'al·lèrgen"
+                value={getIdInput}
+                onChange={setGetIdInput}
+                placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              />
+              <Btn onClick={handleGetById} loading={getLoading} color="#16a34a">
+                Obtenir
+              </Btn>
+              <ResponseBox result={getResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="GET /allergens/eu/:euNumber — Obtenir per número EU" tag="GET" />
+              <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b" }}>
+                Cercar per número EU (1–14)
+              </p>
+              <Input
+                label="Número EU"
+                value={getByEuNumberInput}
+                onChange={setGetByEuNumberInput}
+                placeholder="ex: 1, 7, 14..."
+                type="number"
+              />
+              <Btn onClick={handleGetByEuNumber} loading={getByEuNumberLoading} color="#16a34a">
+                Cercar per EU
+              </Btn>
+              <ResponseBox result={getByEuNumberResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="POST /allergens — Crear al·lèrgen" tag="POST" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+                <Input
+                  label="Codi (màx 10 car.)"
+                  value={createForm.code}
+                  onChange={(v) => setCreateForm((f) => ({ ...f, code: v }))}
+                  placeholder="GLU"
+                />
+                <Input
+                  label="Número EU (1–14)"
+                  value={createForm.euNumber}
+                  onChange={(v) => setCreateForm((f) => ({ ...f, euNumber: v }))}
+                  placeholder="1"
+                  type="number"
+                />
+                <Input
+                  label="Nom en Espanyol"
+                  value={createForm.nameEs}
+                  onChange={(v) => setCreateForm((f) => ({ ...f, nameEs: v }))}
+                  placeholder="Gluten"
+                />
+                <Input
+                  label="Nom en Català"
+                  value={createForm.nameCa}
+                  onChange={(v) => setCreateForm((f) => ({ ...f, nameCa: v }))}
+                  placeholder="Gluten"
+                />
+                <Input
+                  label="Nom en Anglès"
+                  value={createForm.nameEn}
+                  onChange={(v) => setCreateForm((f) => ({ ...f, nameEn: v }))}
+                  placeholder="Gluten"
+                />
+                <Input
+                  label="Icon URL (opcional)"
+                  value={createForm.iconUrl}
+                  onChange={(v) => setCreateForm((f) => ({ ...f, iconUrl: v }))}
+                  placeholder="https://..."
+                />
+              </div>
+              <Input
+                label="Descripció (opcional)"
+                value={createForm.description}
+                onChange={(v) => setCreateForm((f) => ({ ...f, description: v }))}
+                placeholder="Descripció opcional"
+              />
+              <Btn onClick={handleCreate} loading={createLoading} color="#2563eb">
+                Crear
+              </Btn>
+              <ResponseBox result={createResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="DELETE /allergens/:id — Eliminar al·lèrgen" tag="DELETE" />
+              <Input
+                label="UUID de l'al·lèrgen"
+                value={deleteIdInput}
+                onChange={setDeleteIdInput}
+                placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              />
+              <Btn onClick={handleDelete} loading={deleteLoading} color="#dc2626">
+                Eliminar
+              </Btn>
+              <ResponseBox result={deleteResult} />
+            </Card>
+
+            <h2
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                marginBottom: 12,
+                marginTop: 24,
+              }}
+            >
+              Usuaris
+            </h2>
+
+            <Card>
+              <SectionTitle title="GET /users/:id — Obtenir usuari per ID" tag="GET" />
+              <Input
+                label="UUID de l'usuari"
+                value={userIdInput}
+                onChange={setUserIdInput}
+                placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              />
+              <Btn onClick={handleGetUser} loading={userLoading} color="#16a34a">
+                Obtenir
+              </Btn>
+              <ResponseBox result={userResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="DELETE /users/:id — Eliminar usuari" tag="DELETE" />
+              <Input
+                label="UUID de l'usuari"
+                value={deleteUserIdInput}
+                onChange={setDeleteUserIdInput}
+                placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              />
+              <Btn onClick={handleDeleteUser} loading={deleteUserLoading} color="#dc2626">
+                Eliminar
+              </Btn>
+              <ResponseBox result={deleteUserResult} />
+            </Card>
+
+            <h2
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                marginBottom: 12,
+                marginTop: 24,
+              }}
+            >
+              Receptes
+            </h2>
+
+            <Card>
+              <SectionTitle title="GET /recipes/:id — Obtenir recepta per ID" tag="GET" />
+              <Input
+                label="UUID de la recepta"
+                value={recipeIdInput}
+                onChange={setRecipeIdInput}
+                placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              />
+              <Btn onClick={handleGetRecipe} loading={recipeLoading} color="#16a34a">
+                Obtenir
+              </Btn>
+              <ResponseBox result={recipeResult} />
+            </Card>
+
+            <Card>
+              <SectionTitle title="GET /recipes — Llistar totes les receptes" tag="GET" />
+              <Btn onClick={handleGetAllRecipes} loading={recipeAllLoading} color="#16a34a">
+                Llistar
+              </Btn>
+              <ResponseBox result={recipeAllResult} />
+            </Card>
+          </>
+        )}
       </div>
-
-      <h2>Prova Dropdown</h2>
-      <SelectDropdown
-        value={selected}
-        onChange={setSelected}
-        options={[
-          { label: "Taula 1", value: "1" },
-          { label: "Taula 2", value: "2" },
-          { label: "Taula 3", value: "3" },
-        ]}
-      />
-      <p>Seleccionat: {selected}</p>
-
-      <h2>Prova Counter</h2>
-      <CounterInput value={count} onChange={setCount} />
-      <p>Valor: {count}</p>
-
-      <h1>Títol Principal (Fustat Bold 24)</h1>
-      <h2>Títol 1 (Commissioner 20)</h2>
-      <h3>Títol 2 (Commissioner 16)</h3>
-      <h4>Subtítol (Commissioner 14, 65% opacitat)</h4>
-      <p>Text normal (Commissioner 12)</p>
-
-      <h2>Paleta de Colors</h2>
-      <div style={{ display: "flex", gap: 10 }}>
-        <div className="color-box white" />
-        <div className="color-box purple" />
-        <div className="color-box dark-blue" />
-        <div className="color-box green" />
-        <div className="color-box gray" />
-      </div>
-
-      <h2>Card de plat d'exemple</h2>
-      <DishCard name="Lasanya" image={sampleImage} />
-
-      <h2>Exemple de Order Card</h2>
-      <OrderCard
-        orderId="9932"
-        tableNumber="12"
-        items={sampleOrderItems}
-        total={40.5}
-      />
-
-      <h2>Exemple de Ticket Card (Recib)</h2>
-      <TicketCard
-        ticketId="882-2026"
-        orderId="ORD-9932"
-        tableNumber="12"
-        items={sampleTicketItems}
-        total={40.5}
-        paymentMethod="Targeta"
-        paymentDate="15/04/2026 14:30"
-      />
     </div>
   );
 }

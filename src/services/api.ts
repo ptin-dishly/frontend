@@ -127,3 +127,36 @@ export const sessionService = {
         method: "DELETE",
       }),
   };
+
+// Users
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string; // Example: "admin", "kitchen", "waiter"
+  isActive: boolean;
+  createdAt: string;
+}
+
+export const userService = {
+  getById: (id: string) => api<{ success: boolean; data: User }>(`/users/${id}`),
+  delete: (id: string) =>
+    api<{ success: boolean }>(`/users/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+
+// Recipes
+export interface Recipe {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
+export const recipeService = {
+  getById: (id: string) => api<{ success: boolean; data: Recipe }>(`/recipes/${id}`),
+  getAll: () => api<{ success: boolean; data: Recipe[] }>("/recipes"),
+};
