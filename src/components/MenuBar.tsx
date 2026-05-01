@@ -5,6 +5,13 @@ import { RxDashboard } from "react-icons/rx";
 import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
 import { GiCardboardBoxClosed } from "react-icons/gi";
 import { BsForkKnife } from "react-icons/bs";
+import {
+  FaCalendarCheck,
+  FaClipboardList,
+} from "react-icons/fa6";
+import { GiCardboardBoxClosed } from "react-icons/gi";
+import { BsForkKnife } from "react-icons/bs";
+import { RxDashboard } from "react-icons/rx";
 import Logo from "./Logo";
 
 interface MenuBarProps {
@@ -57,62 +64,62 @@ export default function MenuBar({ role }: MenuBarProps) {
         backgroundColor: "#0F172A",
         height: "100dvh",
         padding: 20,
-        boxSizing: "border-box",
         borderTopRightRadius: 50,
         borderBottomRightRadius: 50,
         color: "white",
         display: "flex",
         flexDirection: "column",
-        gap: 16,
-        overflow: "hidden",
+        gap: 25,
+        overflowY: "hidden",
       }}
     >
-      <div style={{ textAlign: "center", marginBottom: 8, marginTop: 8 }}>
-        <Logo />
+
+      <div style={{ position: "relative", height: 220 }}>
+        <div style={{ position: "absolute", top: 80, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+          <Logo />
+        </div>
       </div>
 
       <div
         style={{
+          marginTop: 40,
+          overflowY: "auto",
+          maxHeight: "calc(100vh - 260px)",
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          overflowY: "auto",
-          minHeight: 0,
-          paddingRight: 4,
         }}
       >
         {items.map((item) => {
+          const ItemIcon = item.icon;
           const isActive = activePath === item.route;
           const isHovered = hovered === item.route;
-          const Icon = item.icon;
+
           return (
             <button
               key={item.route}
               type="button"
-              onClick={() => navigate(item.route)}
               onMouseEnter={() => setHovered(item.route)}
               onMouseLeave={() => setHovered(null)}
+              onClick={() => navigate(item.route)}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
                 width: "100%",
-                padding: "12px 15px",
-                borderRadius: 10,
+                padding: "20px 20px",
+                borderRadius: 20,
                 border: "none",
-                background: isActive
-                  ? "var(--color-purple)"
-                  : isHovered
-                  ? "rgba(255,255,255,0.08)"
-                  : "transparent",
-                color: "inherit",
+                background: isActive ? "var(--color-white)" : isHovered ? "#f5f5f7" : "transparent",
+                color: isActive || isHovered ? "var(--color-purple)" : "white",
                 cursor: "pointer",
-                transition: "background 0.2s",
+                transition: "background 0.2s, color 0.2s",
                 textAlign: "left",
+                fontWeight: isActive ? 600 : 400,
               }}
             >
-              <Icon style={{ fontSize: 18, flexShrink: 0 }} />
-              <span style={{ fontSize: 15 }}>{item.label}</span>
+              <ItemIcon size={24} color={isActive || isHovered ? "var(--color-purple)" : "white"} />
+              <span style={{ fontSize: 16 }}>{item.label}</span>
             </button>
           );
         })}
