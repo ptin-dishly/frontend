@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 import TestPage from "../pages/TestPage";
 import LogInPage from "../pages/LogInPage";
 import MainPage from "../pages/MainPage";
@@ -15,13 +16,69 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<LogInPage />} />
         <Route path="/test" element={<TestPage />} />
-        <Route path="/main" element={<MainPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/menu" element={<MenuPage />} />
-        <Route path="/dishes" element={<DishPage />} />
-        <Route path="/dishes/:id" element={<DishDetailPage />} />
-        <Route path="/ingredients" element={<IngredientsPage />} />
-        <Route path="/ingredients/new" element={<NewIngredientPage />} />
+        
+        <Route
+          path="/main"
+          element={
+            <ProtectedRoute>
+              <MainPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/menu"
+          element={
+            <ProtectedRoute>
+              <MenuPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dishes"
+          element={
+            <ProtectedRoute>
+              <DishPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dishes/:id"
+          element={
+            <ProtectedRoute>
+              <DishDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/ingredients"
+          element={
+            <ProtectedRoute>
+              <IngredientsPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/ingredients/new"
+          element={
+            <ProtectedRoute>
+              <NewIngredientPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
