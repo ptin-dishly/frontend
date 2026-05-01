@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { IconType } from "react-icons";
+import { RxDashboard } from "react-icons/rx";
+import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
+import { GiCardboardBoxClosed } from "react-icons/gi";
+import { BsForkKnife } from "react-icons/bs";
 import {
   FaCalendarCheck,
   FaClipboardList,
@@ -14,16 +18,16 @@ interface MenuBarProps {
   role: "admin" | "kitchen" | "waiter" | "host";
 }
 
+type MenuItem = {
+  label: string;
+  route: string;
+  icon: IconType;
+};
+
 export default function MenuBar({ role }: MenuBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [hovered, setHovered] = useState<string | null>(null);
-
-  type MenuItem = {
-    label: string;
-    route: string;
-    icon: IconType;
-  };
 
   const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
@@ -50,16 +54,15 @@ export default function MenuBar({ role }: MenuBarProps) {
   };
 
   const items = menuItemsByRole[role] ?? [];
-
-  // Ruta activa: si estem a "/", tractem-la com "/dashboard"
   const activePath = location.pathname === "/" ? "/dashboard" : location.pathname;
 
   return (
     <div
       style={{
-        width: 250,
-        backgroundColor: "var(--color-dark-blue)",
-        height: "100vh",
+        width: "clamp(200px, 26vw, 250px)",
+        maxWidth: "100vw",
+        backgroundColor: "#0F172A",
+        height: "100dvh",
         padding: 20,
         borderTopRightRadius: 50,
         borderBottomRightRadius: 50,
@@ -70,14 +73,13 @@ export default function MenuBar({ role }: MenuBarProps) {
         overflowY: "hidden",
       }}
     >
-      {/* Logo: absolute inside a fixed-height wrapper so buttons don't shift */}
+
       <div style={{ position: "relative", height: 220 }}>
         <div style={{ position: "absolute", top: 80, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
           <Logo />
         </div>
       </div>
 
-      {/* Menu Items */}
       <div
         style={{
           marginTop: 40,
