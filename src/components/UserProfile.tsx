@@ -20,8 +20,7 @@ export default function UserProfile() {
       admin: "Administrador",
       kitchen: "Cuina",
       waiter: "Cambrer/a",
-      manager: "Gestor",
-      host: "Recepcionista",
+      sales: "Ventes",
     };
     return roleLabels[role] || role;
   };
@@ -31,8 +30,7 @@ export default function UserProfile() {
       admin: "#7C3AED",
       kitchen: "#2563EB",
       waiter: "#22C55E",
-      manager: "#F59E0B",
-      host: "#EC4899",
+      sales: "#EC4899",
     };
     return colors[role] || "#6B7280";
   };

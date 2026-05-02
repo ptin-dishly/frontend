@@ -1,36 +1,54 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "../components/ProtectedRoute";
-import TestPage from "../pages/TestPage";
 import LogInPage from "../pages/LogInPage";
-import MainPage from "../pages/MainPage";
 import DashboardPage from "../pages/DashboardPage";
 import MenuPage from "../pages/MenuPage";
 import DishPage from "../pages/DishPage";
 import DishDetailPage from "../pages/DishDetailPage";
 import IngredientsPage from "../pages/IngredientsPage";
 import NewIngredientPage from "../pages/NewIngredientPage";
+import OrderPage from "../pages/OrderPage";
+import TablesPage from "../pages/TablePage";
+import BookingsPage from "../pages/BookingPage";
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LogInPage />} />
-        <Route path="/test" element={<TestPage />} />
         
         <Route
-          path="/main"
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <MainPage />
+              <DashboardPage />
             </ProtectedRoute>
           }
         />
         
         <Route
-          path="/dashboard"
+          path="/tables"
           element={
-            <ProtectedRoute requiredRole="admin">
-              <DashboardPage />
+            <ProtectedRoute>
+              <TablesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/bookings"
+          element={
+            <ProtectedRoute>
+              <BookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/kitchen"
+          element={
+            <ProtectedRoute>
+              <OrderPage />
             </ProtectedRoute>
           }
         />

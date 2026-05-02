@@ -1,232 +1,160 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getCurrentUser } from "../utils/storage";
+import { ingredientService, type Ingredient } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
-import BigButton from "../components/BigButton";
 import SelectDropdown from "../components/SelectDropdown";
-import IngredientCard from "../components/IngredientCard";
+import BigButton from "../components/BigButton";
 import NewIngredientCard from "../components/NewIngredientCard";
-import { useNavigate } from "react-router-dom";
+import IngredientCard from "../components/IngredientCard";
+import sampleImage from "../assets/imagen.png";
 
 export default function IngredientsPage() {
-    const [globalSearch, setGlobalSearch] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState("");
-    const navigate = useNavigate();
+  const user = getCurrentUser();
+  const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
+  const navigate = useNavigate();
 
-    const categoryOptions = [
-        { label: "Totes les categories", value: "" },
-        { label: "Carn", value: "Carn" },
-        { label: "Làctics", value: "Làctics" },
-        { label: "Frescos", value: "Frescos" },
-        { label: "Secs", value: "Secs" },
-    ];
-    const ingredients = [
-        {
-            id: "1",
-            category: "Carn",
-            name: "Mitjanes de Xai",
-            image: "/ingredients/xai.png",
-            quantityKg: 15,
-            expirationDays: 5,
-        },
-        {
-            id: "2",
-            category: "Làctics",
-            name: "Nata",
-            image: "/ingredients/nata.png",
-            quantityKg: 4,
-            expirationDays: 14,
-        },
-        {
-            id: "3",
-            category: "Frescos",
-            name: "Coliflor",
-            image: "/ingredients/coliflor.png",
-            quantityKg: 20,
-            expirationDays: 7,
-        },
-        {
-            id: "4",
-            category: "Secs",
-            name: "Farina",
-            image: "/ingredients/farina.png",
-            quantityKg: 120,
-            expirationDays: 180,
-        },
-        {
-            id: "5",
-            category: "Frescos",
-            name: "Tomàquet",
-            image: "/ingredients/tomato.png",
-            quantityKg: 8,
-            expirationDays: 3,
-        },
-        {
-            id: "6",
-            category: "Làctics",
-            name: "Formatge",
-            image: "/ingredients/cheese.png",
-            quantityKg: 10,
-            expirationDays: 20,
-        },
-    ];
+  // Only allow admin and kitchen to view ingredients
+  if (!["admin", "kitchen"].includes(userRole)) {
+    navigate("/dashboard");
+    return null;
+  }
 
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    const filteredIngredients = ingredients.filter((ingredient) => {
-        const matchesSearch =
-            ingredient.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-            ingredient.category.toLowerCase().includes(globalSearch.toLowerCase());
+  useEffect(() => {
+    const fetchIngredients = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await ingredientService.getAll();
+        if (res.success && res.data) {
+          setIngredients(res.data);
+        }
+      } catch (err) {
+        console.error("Error fetching ingredients:", err);
+        setError("Failed to load ingredients");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        const matchesCategory =
-            categoryFilter === "" || ingredient.category === categoryFilter;
+    fetchIngredients();
+  }, []);
 
-        return matchesSearch && matchesCategory;
-    });
+  const categories = Array.from(new Set(ingredients.map((i) => i.name))).map((name) => ({
+    label: name,
+    value: name,
+  }));
 
-    const lowStockCount = ingredients.filter(
-        (ingredient) => ingredient.quantityKg <= 5
-    ).length;
+  const filteredIngredients = ingredients.filter((ingredient) => {
+    const matchesSearch = ingredient.name
+      .toLowerCase()
+      .includes(globalSearch.toLowerCase());
+    const matchesCategory = !categoryFilter || ingredient.name === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
-    const expireSoonCount = ingredients.filter(
-        (ingredient) => ingredient.expirationDays <= 7
-    ).length;
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
+      <MenuBar role={userRole} />
 
-    return (
-        <div
-            style={{
-                display: "flex",
-                backgroundColor: "var(--color-white)",
-                minHeight: "100vh",
-            }}
-        >
-            <MenuBar role="admin" />
-
-            <div
-                style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    padding: "40px 20px",
-                }}
-            >
-                <div style={{ width: "100%", maxWidth: "1100px" }}>
-                    <h1
-                        style={{
-                            fontFamily: "Fustat",
-                            color: "var(--color-dark-blue)",
-                            fontSize: 32,
-                            margin: 0,
-                            marginBottom: 30,
-                        }}
-                    >
-                        Ingredients' Stock
-                    </h1>
-
-                    <div
-                        style={{
-                            marginBottom: 40,
-                            display: "flex",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <SearchBar
-                            value={globalSearch}
-                            onChange={setGlobalSearch}
-                            placeholder="Cerca ingredients..."
-                        />
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            gap: 24,
-                            marginBottom: 50,
-                            flexWrap: "wrap",
-                        }}
-                    >
-                        <BigButton
-                            label="Total ingredients"
-                            value={ingredients.length}
-                            variant="navy"
-                        />
-                        <BigButton
-                            label="Cad. propera"
-                            value={expireSoonCount}
-                            variant="navy"
-                        />
-                        <BigButton
-                            label="Stock baix"
-                            value={lowStockCount}
-                            variant="navy"
-                        />
-                        {ingredients.length > 11 && (
-                            <BigButton
-                                label="Nou ingredient"
-                                value="+"
-                                variant="green"
-                                onClick={() => navigate("/ingredients/new")}
-                            />
-                        )
-                        }
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 30,
-                            flexWrap: "wrap",
-                            gap: 20,
-                        }}
-                    >
-                        <h2
-                            style={{
-                                fontFamily: "Fustat",
-                                fontSize: 22,
-                                color: "var(--color-dark-blue)",
-                                margin: 0,
-                            }}
-                        >
-                            Ingredients
-                        </h2>
-
-                        <SelectDropdown
-                            options={categoryOptions}
-                            value={categoryFilter}
-                            onChange={setCategoryFilter}
-                            placeholder="Categoria"
-                        />
-                    </div>
-
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-                            gap: "24px",
-                            justifyItems: "center",
-                            width: "100%",
-                        }}
-                    >
-                        {filteredIngredients.map((ingredient) => (
-                            <IngredientCard
-                                key={ingredient.id}
-                                category={ingredient.category}
-                                name={ingredient.name}
-                                image={ingredient.image}
-                                quantity={`${ingredient.quantityKg} Kg`}
-                                expiration={`Caduca en ${ingredient.expirationDays} dies`}
-                                onClick={() => console.log("Ingredient:", ingredient)}
-                            />
-                        ))}
-
-                        <NewIngredientCard
-                                onClick={() => navigate("/ingredients/new")}
-                        />
-                    </div>
-                </div>
-            </div>
+      <main style={{ flex: 1, padding: "48px 56px", maxWidth: 1400, margin: "0 auto" }}>
+        <div style={{ marginBottom: 30 }}>
+          <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0 }}>Ingredients</h1>
         </div>
-    );
+
+        {error && (
+          <div
+            style={{
+              backgroundColor: "#FEE2E2",
+              color: "#DC2626",
+              padding: "16px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+              fontSize: "14px",
+            }}
+          >
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 44,
+            gap: 24,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ maxWidth: 420, width: "100%" }}>
+            <SearchBar
+              value={globalSearch}
+              onChange={setGlobalSearch}
+              placeholder="Search ingredients..."
+            />
+          </div>
+
+          <SelectDropdown
+            options={[
+              { label: "All Ingredients", value: "" },
+              ...categories,
+            ]}
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            placeholder="Filter by ingredient"
+          />
+
+          <BigButton
+            label="New Ingredient"
+            value="+"
+            onClick={() => navigate("/ingredients/new")}
+          />
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "#6B7280" }}>
+            <p>Loading ingredients...</p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gap: 24,
+            }}
+          >
+            <NewIngredientCard onClick={() => navigate("/ingredients/new")} />
+
+            {filteredIngredients.length === 0 ? (
+              <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
+                No ingredients found
+              </p>
+            ) : (
+              filteredIngredients.map((ingredient) => (
+                <IngredientCard
+                  key={ingredient.id}
+                  category={ingredient.name}
+                  name={ingredient.name}
+                  image={sampleImage}
+                  quantity={ingredient.description || "N/A"}
+                  expiration={ingredient.isActive ? "Active" : "Inactive"}
+                  onClick={() => {
+                    console.log("Clicked ingredient:", ingredient.id);
+                  }}
+                />
+              ))
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }

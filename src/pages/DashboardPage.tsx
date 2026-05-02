@@ -9,7 +9,7 @@ import Notification from "../components/Notification";
 
 export default function DashboardPage() {
   const user = getCurrentUser();
-  const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "host";
+  const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   
   const [globalSearch, setGlobalSearch] = useState("");
   const [orderSearch, setOrderSearch] = useState("");

@@ -10,7 +10,7 @@ import Logo from "./Logo";
 import UserProfile from "./UserProfile";
 
 interface MenuBarProps {
-  role: "admin" | "kitchen" | "waiter" | "host";
+  role: "admin" | "kitchen" | "waiter" | "sales";
 }
 
 type MenuItem = {
@@ -27,29 +27,26 @@ export default function MenuBar({ role }: MenuBarProps) {
   const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
-      { label: "Tickets", route: "/orders", icon: FaClipboardList },
+      { label: "Tables", route: "/tables", icon: BsForkKnife },
+      { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Ingredients' Stock", route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
+      { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
+      { label: "Dishes", route: "/dishes", icon: BsForkKnife },
+      { label: "Menu", route: "/menu", icon: MdMenuBook },
     ],
     kitchen: [
-      { label: "Tickets", route: "/orders", icon: FaClipboardList },
-      { label: "Ingredients' Stock", route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
+      { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
+      { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
+      { label: "Dishes", route: "/dishes", icon: BsForkKnife },
     ],
     waiter: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
-      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
+      { label: "Tables", route: "/tables", icon: BsForkKnife },
+      { label: "Menu", route: "/menu", icon: MdMenuBook },
     ],
-    host: [
-      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
+    sales: [
+      { label: "Tables", route: "/tables", icon: BsForkKnife },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
     ],
   };
 
@@ -72,12 +69,10 @@ export default function MenuBar({ role }: MenuBarProps) {
         overflowY: "hidden",
       }}
     >
-      {/* Logo */}
       <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
         <Logo />
       </div>
 
-      {/* Menu Items */}
       <div
         style={{
           overflowY: "auto",
@@ -126,7 +121,6 @@ export default function MenuBar({ role }: MenuBarProps) {
         })}
       </div>
 
-      {/* User Profile at the bottom */}
       <div style={{ marginTop: "auto" }}>
         <UserProfile />
       </div>
