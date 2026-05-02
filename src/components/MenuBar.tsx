@@ -30,9 +30,9 @@ export default function MenuBar({ role }: MenuBarProps) {
       { label: "Tables", route: "/tables", icon: BsForkKnife },
       { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
+      { label: "Menus", route: "/menus", icon: MdMenuBook },
       { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
       { label: "Dishes", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu", route: "/menu", icon: MdMenuBook },
     ],
     kitchen: [
       { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
@@ -42,7 +42,7 @@ export default function MenuBar({ role }: MenuBarProps) {
     waiter: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
       { label: "Tables", route: "/tables", icon: BsForkKnife },
-      { label: "Menu", route: "/menu", icon: MdMenuBook },
+      { label: "Menus", route: "/menus", icon: MdMenuBook },
     ],
     sales: [
       { label: "Tables", route: "/tables", icon: BsForkKnife },

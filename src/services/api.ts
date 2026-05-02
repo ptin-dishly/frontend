@@ -160,9 +160,16 @@ export interface User {
 
 export const userService = {
   getMe: () => api<User>("/users/me"),
-  getById: (id: string) => api<User>(`/users/${id}`),
+  getById: (id: string) => api<User>(`/users/:id`, {
+    method: "GET",
+  }),
+  update: (id: string, data: Partial<User>) =>
+    api<User>(`/users/:id`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
   delete: (id: string) =>
-    api<void>(`/users/${id}`, {
+    api<void>(`/users/:id`, {
       method: "DELETE",
     }),
 };
@@ -207,6 +214,20 @@ export const allergenService = {
   getById: (id: string) => api<Allergen>(`/allergens/${id}`),
   getByEuNumber: (euNumber: number) => api<Allergen>(`/allergens/eu/${euNumber}`),
   search: (q: string) => api<Allergen[]>(`/allergens/search?q=${encodeURIComponent(q)}`),
+  create: (data: Partial<Allergen>) =>
+    api<Allergen>("/allergens", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: Partial<Allergen>) =>
+    api<Allergen>(`/allergens/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    api<void>(`/allergens/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 export const ingredientService = {
@@ -216,10 +237,19 @@ export const ingredientService = {
     api<IngredientAllergen[]>(`/ingredients/${ingredientId}/allergens`),
   search: (q: string) =>
     api<Ingredient[]>(`/ingredients/search?q=${encodeURIComponent(q)}`),
-  create: (data: { name: string; description?: string }) =>
+  create: (data: Partial<Ingredient>) =>
     api<Ingredient>("/ingredients", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+  update: (id: string, data: Partial<Ingredient>) =>
+    api<Ingredient>(`/ingredients/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    api<void>(`/ingredients/${id}`, {
+      method: "DELETE",
     }),
 };
 
@@ -254,16 +284,13 @@ export interface RecipeIngredientDetail {
 }
 
 export const recipeService = {
-  getById: (id: string) => api<Recipe>(`/recipes/${id}`),
   getAll: () => api<Recipe[]>("/recipes"),
+  getById: (id: string) => api<Recipe>(`/recipes/${id}`),
   getIngredients: (recipeId: string) =>
     api<RecipeIngredientDetail[]>(`/recipes/${recipeId}/ingredients`),
-  create: (
-    data: Omit<
-      Recipe,
-      "id" | "created_at" | "updated_at" | "created_by" | "version"
-    >
-  ) =>
+  getByAllergen: (allergenId: string) =>
+    api<Recipe[]>(`/recipes/allergens/${allergenId}`),
+  create: (data: Omit<Recipe, "id" | "created_at" | "updated_at" | "created_by" | "version">) =>
     api<Recipe>("/recipes", {
       method: "POST",
       body: JSON.stringify(data),
@@ -316,6 +343,8 @@ export const menuService = {
   getAll: () => api<Menu[]>("/menus"),
   getById: (id: string) => api<Menu>(`/menus/${id}`),
   getItems: () => api<MenuItem[]>("/menu-card-items"),
+  getByAllergen: (allergenId: string) =>
+    api<Menu[]>(`/menus/allergen/${allergenId}`),
   create: (data: Omit<Menu, "id" | "createdAt" | "updatedAt">) =>
     api<Menu>("/menus", {
       method: "POST",
@@ -602,18 +631,6 @@ export const bookingService = {
         } else {
           reject(new APIError("NOT_FOUND", 404, "Booking not found"));
         }
-      }, 500);
-    });
-  },
-  create: async (data: Omit<Booking, "id">): Promise<ApiResponse<Booking>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newBooking: Booking = {
-          id: `B${String(FAKE_BOOKINGS.length + 1).padStart(3, "0")}`,
-          ...data,
-        };
-        FAKE_BOOKINGS.push(newBooking);
-        resolve({ success: true, data: newBooking });
       }, 500);
     });
   },

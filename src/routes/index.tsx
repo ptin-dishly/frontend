@@ -52,9 +52,9 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
-          path="/menu"
+          path="/menus"
           element={
             <ProtectedRoute>
               <MenuPage />

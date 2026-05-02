@@ -15,7 +15,6 @@ export default function IngredientsPage() {
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
 
-  // Only allow admin and kitchen to view ingredients
   if (!["admin", "kitchen"].includes(userRole)) {
     navigate("/dashboard");
     return null;
@@ -94,7 +93,7 @@ export default function IngredientsPage() {
             flexWrap: "wrap",
           }}
         >
-          <div style={{ maxWidth: 420, width: "100%" }}>
+          <div style={{ maxWidth: 300, width: "100%" }}>
             <SearchBar
               value={globalSearch}
               onChange={setGlobalSearch}

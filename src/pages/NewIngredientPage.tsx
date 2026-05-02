@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../utils/storage";
-import { ingredientService } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
 
@@ -11,16 +10,8 @@ export default function NewIngredientPage() {
   const navigate = useNavigate();
 
   if (!["admin", "kitchen"].includes(userRole)) {
-    return (
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
-          <p style={{ fontSize: "16px", color: "#6B7280" }}>
-            Access denied. This page is only available for admin and kitchen roles.
-          </p>
-        </main>
-      </div>
-    );
+    navigate("/dashboard");
+    return null;
   }
 
   const [name, setName] = useState("");
@@ -33,23 +24,20 @@ export default function NewIngredientPage() {
     setError(null);
 
     if (!name) {
-      setError("Please fill in all required fields");
+      setError("Please fill in ingredient name");
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await ingredientService.create({
-        name,
-        description,
-      });
+      // Simulate API call - will use real endpoint once backend is ready
+      console.log("Creating ingredient (using fake data):", { name, description });
 
-      if (res.success) {
+      // For now, just show success message
+      setTimeout(() => {
         navigate("/ingredients");
-      } else {
-        setError("Failed to create ingredient");
-      }
+      }, 1000);
     } catch (err) {
       setError("Failed to create ingredient");
       console.error(err);
@@ -68,6 +56,19 @@ export default function NewIngredientPage() {
         <h1 style={{ fontSize: 32, color: "#0F172A", margin: "20px 0" }}>
           Create New Ingredient
         </h1>
+
+        <div
+          style={{
+            backgroundColor: "#FEF3C7",
+            color: "#92400E",
+            padding: "12px 16px",
+            borderRadius: "8px",
+            marginBottom: "24px",
+            fontSize: "13px",
+          }}
+        >
+          ℹ️ This feature will be saved to the backend once the endpoint is ready.
+        </div>
 
         {error && (
           <div
