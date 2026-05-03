@@ -214,6 +214,8 @@ export const allergenService = {
   getById: (id: string) => api<Allergen>(`/allergens/${id}`),
   getByEuNumber: (euNumber: number) => api<Allergen>(`/allergens/eu/${euNumber}`),
   search: (q: string) => api<Allergen[]>(`/allergens/search?q=${encodeURIComponent(q)}`),
+  getByIngredient: (ingredientId: string) =>
+    api<Allergen[]>(`/allergens/ingredient/${ingredientId}`),
   create: (data: Partial<Allergen>) =>
     api<Allergen>("/allergens", {
       method: "POST",

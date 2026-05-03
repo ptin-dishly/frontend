@@ -10,6 +10,7 @@ import NewIngredientPage from "../pages/NewIngredientPage";
 import OrderPage from "../pages/OrderPage";
 import TablesPage from "../pages/TablePage";
 import BookingsPage from "../pages/BookingPage";
+import RecipeCreatePage from "../pages/DishCreatePage";
 
 export function AppRoutes() {
   return (
@@ -76,6 +77,15 @@ export function AppRoutes() {
           element={
             <ProtectedRoute>
               <DishDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dishes/new"
+          element={
+            <ProtectedRoute>
+              <RecipeCreatePage />
             </ProtectedRoute>
           }
         />

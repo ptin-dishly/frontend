@@ -48,13 +48,11 @@ export default function DishPage() {
     fetchDishes();
   }, []);
 
-  // Fetch allergens
   useEffect(() => {
     const fetchAllergens = async () => {
       try {
         const res = await allergenService.getAll();
         if (res.success && res.data) {
-          console.log("Allergens fetched:", res.data);
           setAllergens(res.data);
         }
       } catch (err) {
@@ -65,7 +63,6 @@ export default function DishPage() {
     fetchAllergens();
   }, []);
 
-  // Fetch recipes with allergen
   useEffect(() => {
     const fetchRecipesWithAllergen = async () => {
       if (!excludedAllergenId) {
@@ -74,11 +71,9 @@ export default function DishPage() {
       }
 
       try {
-        console.log(`Fetching recipes with allergen: ${excludedAllergenId}`);
         const res = await recipeService.getByAllergen(excludedAllergenId);
         if (res.success && res.data) {
           const recipeIds = res.data.map((recipe) => recipe.id);
-          console.log(`Recipes with allergen ${excludedAllergenId}:`, recipeIds);
           setRecipesWithAllergen(recipeIds);
         }
       } catch (err) {
@@ -115,7 +110,15 @@ export default function DishPage() {
 
     setSavingId(dishId);
     try {
-      const res = await recipeService.update(dishId, editingData);
+      const res = await recipeService.update(dishId, {
+        name: editingData.name,
+        description: editingData.description,
+        category: editingData.category,
+        preparation_time: editingData.preparation_time,
+        servings: editingData.servings,
+        portion_size_kg: editingData.portion_size_kg,
+      });
+
       if (res.success && res.data) {
         setDishes((prev) =>
           prev.map((d) => (d.id === dishId ? res.data! : d))
@@ -123,11 +126,11 @@ export default function DishPage() {
         setEditingId(null);
         setEditingData(null);
       } else {
-        setError("Failed to save dish");
+        setError("Failed to save recipe");
       }
     } catch (err) {
-      console.error("Error saving dish:", err);
-      setError("Error saving dish");
+      console.error("Error saving recipe:", err);
+      setError("Error saving recipe");
     } finally {
       setSavingId(null);
     }
@@ -139,18 +142,18 @@ export default function DishPage() {
   };
 
   const handleDelete = async (dishId: string) => {
-    if (!confirm("Are you sure you want to delete this dish?")) return;
+    if (!confirm("Are you sure you want to delete this recipe?")) return;
 
     try {
       const res = await recipeService.delete(dishId);
       if (res.success) {
-        setDishes((prev) => prev.filter((d) => d.id !== dishId));
+        setDishes(dishes.filter((d) => d.id !== dishId));
       } else {
-        setError("Failed to delete dish");
+        setError("Failed to delete recipe");
       }
     } catch (err) {
-      console.error("Error deleting dish:", err);
-      setError("Error deleting dish");
+      console.error("Error deleting recipe:", err);
+      setError("Error deleting recipe");
     }
   };
 
@@ -221,7 +224,6 @@ export default function DishPage() {
           </button>
         </div>
 
-        {/* Filters Section */}
         <div
           style={{
             marginBottom: 24,
@@ -289,7 +291,7 @@ export default function DishPage() {
 
         <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
           Showing {filteredDishes.length} of {dishes.length} dishes
-          {excludedAllergenId && allergens.find(a => a.id === excludedAllergenId) && 
+          {excludedAllergenId && allergens.find(a => a.id === excludedAllergenId) &&
             ` (excluding ${allergens.find(a => a.id === excludedAllergenId)?.nameEs})`
           }
         </div>
@@ -310,11 +312,10 @@ export default function DishPage() {
               backgroundColor: "white",
             }}
           >
-            {/* Header */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr",
                 gap: 16,
                 padding: "16px 20px",
                 backgroundColor: "#F3F4F6",
@@ -331,7 +332,6 @@ export default function DishPage() {
               <div>Actions</div>
             </div>
 
-            {/* Rows */}
             {filteredDishes.length === 0 ? (
               <div style={{ padding: "32px 20px", textAlign: "center", color: "#6B7280" }}>
                 No dishes found
@@ -342,13 +342,12 @@ export default function DishPage() {
                   key={dish.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr",
                     gap: 16,
                     padding: "16px 20px",
                     borderBottom: index < filteredDishes.length - 1 ? "1px solid #E5E7EB" : "none",
                     alignItems: "center",
                     backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
-                    transition: "background-color 0.2s",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = "#F3F4F6";
@@ -371,6 +370,7 @@ export default function DishPage() {
                           borderRadius: 6,
                           border: "1px solid #E5E7EB",
                           fontSize: 13,
+                          fontFamily: "inherit",
                         }}
                       />
                       <input
@@ -384,6 +384,7 @@ export default function DishPage() {
                           borderRadius: 6,
                           border: "1px solid #E5E7EB",
                           fontSize: 13,
+                          fontFamily: "inherit",
                         }}
                       />
                       <input
@@ -400,6 +401,7 @@ export default function DishPage() {
                           borderRadius: 6,
                           border: "1px solid #E5E7EB",
                           fontSize: 13,
+                          fontFamily: "inherit",
                         }}
                       />
                       <input
@@ -416,6 +418,7 @@ export default function DishPage() {
                           borderRadius: 6,
                           border: "1px solid #E5E7EB",
                           fontSize: 13,
+                          fontFamily: "inherit",
                         }}
                       />
                       <div style={{ display: "flex", gap: 8 }}>
@@ -479,13 +482,7 @@ export default function DishPage() {
                       <div style={{ fontSize: 13, color: "#0F172A" }}>
                         {dish.servings}
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          justifyContent: "flex-end",
-                        }}
-                      >
+                      <div style={{ display: "flex", gap: 8 }}>
                         <button
                           onClick={() => handleEdit(dish)}
                           style={{
