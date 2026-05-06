@@ -1,357 +1,539 @@
-// src/pages/DishPage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUser } from "../utils/storage";
+import { recipeService, allergenService, type Recipe, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
-import { type Recipe } from "../services/api";
-
-// Fake data
-const FAKE_DISHES: Recipe[] = [
-  {
-    id: "77777777-0007-0007-0007-000000000001",
-    establishment_id: "22222222-0002-0002-0002-000000000001",
-    name: "Lasaña de carne",
-    description: "Lasaña tradicional italiana con carne picada y bechamel",
-    category: "segundo_plato",
-    portion_size_kg: 0.4,
-    servings: 1,
-    preparation_time: 60,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000001",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "77777777-0007-0007-0007-000000000002",
-    establishment_id: "22222222-0002-0002-0002-000000000001",
-    name: "Salmón a la plancha",
-    description: "Salmón fresco con limón y perejil",
-    category: "segundo_plato",
-    portion_size_kg: 0.25,
-    servings: 1,
-    preparation_time: 20,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000001",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "77777777-0007-0007-0007-000000000003",
-    establishment_id: "22222222-0002-0002-0002-000000000001",
-    name: "Ensalada César",
-    description: "Ensalada con pollo, parmesano y aderezo César",
-    category: "entrante",
-    portion_size_kg: 0.3,
-    servings: 1,
-    preparation_time: 15,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000001",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "77777777-0007-0007-0007-000000000004",
-    establishment_id: "22222222-0002-0002-0002-000000000001",
-    name: "Crema catalana",
-    description: "Postre tradicional catalán con azúcar caramelizado",
-    category: "postre",
-    portion_size_kg: 0.15,
-    servings: 1,
-    preparation_time: 30,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000001",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "77777777-0007-0007-0007-000000000005",
-    establishment_id: "22222222-0002-0002-0002-000000000002",
-    name: "Pollo al ajillo",
-    description: "Pollo con ajo y vino blanco al estilo tradicional",
-    category: "segundo_plato",
-    portion_size_kg: 0.35,
-    servings: 1,
-    preparation_time: 35,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000005",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "77777777-0007-0007-0007-000000000006",
-    establishment_id: "22222222-0002-0002-0002-000000000002",
-    name: "Patatas bravas",
-    description: "Patatas fritas con salsa brava casera",
-    category: "entrante",
-    portion_size_kg: 0.2,
-    servings: 1,
-    preparation_time: 25,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000005",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "77777777-0007-0007-0007-000000000007",
-    establishment_id: "22222222-0002-0002-0002-000000000001",
-    name: "Salsa bechamel",
-    description: "Salsa bechamel base para lasaña",
-    category: "salsa",
-    portion_size_kg: 0.1,
-    servings: 4,
-    preparation_time: 15,
-    version: 1,
-    created_by: "33333333-0003-0003-0003-000000000001",
-    created_at: "2026-01-15T10:00:00Z",
-    updated_at: "2026-01-15T10:00:00Z",
-  },
-];
-
-const getCategoryColor = (category: string): string => {
-  const colors: Record<string, string> = {
-    entrante: "#7C3AED",
-    segundo_plato: "#2563EB",
-    postre: "#EC4899",
-    salsa: "#F59E0B",
-  };
-  return colors[category] || "#6B7280";
-};
 
 export default function DishPage() {
+  const user = getCurrentUser();
+  const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
+
+  if (!["admin", "kitchen"].includes(userRole)) {
+    navigate("/dashboard");
+    return null;
+  }
+
+  const [dishes, setDishes] = useState<Recipe[]>([]);
   const [globalSearch, setGlobalSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [dishes] = useState<Recipe[]>(FAKE_DISHES);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingData, setEditingData] = useState<Partial<Recipe> | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [allergens, setAllergens] = useState<Allergen[]>([]);
+  const [excludedAllergenId, setExcludedAllergenId] = useState<string | null>(null);
+  const [recipesWithAllergen, setRecipesWithAllergen] = useState<string[]>([]);
 
-  const categoryOptions = [
-    { label: "Totes les categories", value: "" },
-    { label: "Entrante", value: "entrante" },
-    { label: "Segundo Plato", value: "segundo_plato" },
-    { label: "Postre", value: "postre" },
-    { label: "Salsa", value: "salsa" },
+  useEffect(() => {
+    const fetchDishes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await recipeService.getAll();
+        if (res.success && res.data) {
+          setDishes(res.data);
+        }
+      } catch (err) {
+        console.error("Error fetching dishes:", err);
+        setError("Failed to load dishes");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDishes();
+  }, []);
+
+  useEffect(() => {
+    const fetchAllergens = async () => {
+      try {
+        const res = await allergenService.getAll();
+        if (res.success && res.data) {
+          setAllergens(res.data);
+        }
+      } catch (err) {
+        console.error("Error fetching allergens:", err);
+      }
+    };
+
+    fetchAllergens();
+  }, []);
+
+  useEffect(() => {
+    const fetchRecipesWithAllergen = async () => {
+      if (!excludedAllergenId) {
+        setRecipesWithAllergen([]);
+        return;
+      }
+
+      try {
+        const res = await recipeService.getByAllergen(excludedAllergenId);
+        if (res.success && res.data) {
+          const recipeIds = res.data.map((recipe) => recipe.id);
+          setRecipesWithAllergen(recipeIds);
+        }
+      } catch (err) {
+        console.error("Error fetching recipes with allergen:", err);
+      }
+    };
+
+    fetchRecipesWithAllergen();
+  }, [excludedAllergenId]);
+
+  const categories = [
+    { label: "All Categories", value: "" },
+    ...Array.from(new Set(dishes.map((d) => d.category))).map((cat) => ({
+      label: cat,
+      value: cat,
+    })),
   ];
 
   const filteredDishes = dishes.filter((dish) => {
-    const matchesSearch =
-      dish.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-      dish.description?.toLowerCase().includes(globalSearch.toLowerCase());
-
-    const matchesCategory =
-      categoryFilter === "" || dish.category === categoryFilter;
-
-    return matchesSearch && matchesCategory;
+    const matchesSearch = dish.name.toLowerCase().includes(globalSearch.toLowerCase());
+    const matchesCategory = !categoryFilter || dish.category === categoryFilter;
+    const matchesAllergen =
+      excludedAllergenId === null || !recipesWithAllergen.includes(dish.id);
+    return matchesSearch && matchesCategory && matchesAllergen;
   });
 
+  const handleEdit = (dish: Recipe) => {
+    setEditingId(dish.id);
+    setEditingData({ ...dish });
+  };
+
+  const handleSave = async (dishId: string) => {
+    if (!editingData) return;
+
+    setSavingId(dishId);
+    try {
+      const res = await recipeService.update(dishId, {
+        name: editingData.name,
+        description: editingData.description,
+        category: editingData.category,
+        preparation_time: editingData.preparation_time,
+        servings: editingData.servings,
+        portion_size_kg: editingData.portion_size_kg,
+      });
+
+      if (res.success && res.data) {
+        setDishes((prev) =>
+          prev.map((d) => (d.id === dishId ? res.data! : d))
+        );
+        setEditingId(null);
+        setEditingData(null);
+      } else {
+        setError("Failed to save recipe");
+      }
+    } catch (err) {
+      console.error("Error saving recipe:", err);
+      setError("Error saving recipe");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditingData(null);
+  };
+
+  const handleDelete = async (dishId: string) => {
+    if (!confirm("Are you sure you want to delete this recipe?")) return;
+
+    try {
+      const res = await recipeService.delete(dishId);
+      if (res.success) {
+        setDishes(dishes.filter((d) => d.id !== dishId));
+      } else {
+        setError("Failed to delete recipe");
+      }
+    } catch (err) {
+      console.error("Error deleting recipe:", err);
+      setError("Error deleting recipe");
+    }
+  };
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#FAFAFA" }}>
-      <MenuBar role="admin" />
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
+      <MenuBar role={userRole} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 20px", alignItems: "center" }}>
-        {/* Header */}
-        <div style={{ width: "100%", maxWidth: "1400px", marginBottom: "30px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <h1 style={{ fontFamily: "Fustat, sans-serif", color: "#0F172A", fontSize: "32px", fontWeight: 700, margin: "0 0 8px 0" }}>
-              Plats del Restaurant
-            </h1>
-            <p style={{ color: "#6B7280", fontSize: "14px", margin: 0 }}>
-              Gestiona tots els plats disponibles
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/dishes/new")}
+      <main style={{ flex: 1, padding: "40px 48px" }}>
+        <div style={{ marginBottom: 30 }}>
+          <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>
+            Dishes
+          </h1>
+        </div>
+
+        {error && (
+          <div
             style={{
-              padding: "12px 24px",
-              backgroundColor: "#22C55E",
-              color: "#FFFFFF",
-              border: "none",
+              backgroundColor: "#FEE2E2",
+              color: "#DC2626",
+              padding: "12px 16px",
               borderRadius: "8px",
+              marginBottom: "24px",
               fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              whiteSpace: "nowrap",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#16A34A")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#22C55E")}
           >
-            + Nou Plat
-          </button>
-        </div>
+            ⚠️ {error}
+          </div>
+        )}
 
-        {/* Search */}
-        <div style={{ width: "100%", maxWidth: "1400px", marginBottom: "30px" }}>
-          <SearchBar
-            value={globalSearch}
-            onChange={setGlobalSearch}
-            placeholder="Cerca plats per nom o descripció..."
-          />
-        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 32,
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ maxWidth: 300, width: "100%" }}>
+            <SearchBar
+              value={globalSearch}
+              onChange={setGlobalSearch}
+              placeholder="Search dishes..."
+            />
+          </div>
 
-        {/* Filter */}
-        <div style={{ width: "100%", maxWidth: "1400px", marginBottom: "30px" }}>
           <SelectDropdown
-            options={categoryOptions}
+            options={categories}
             value={categoryFilter}
             onChange={setCategoryFilter}
           />
+
+          <button
+            onClick={() => navigate("/dishes/new")}
+            style={{
+              backgroundColor: "var(--color-green)",
+              color: "white",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            + New Dish
+          </button>
         </div>
 
-        {/* Dishes List */}
-        {filteredDishes.length === 0 ? (
-          <div style={{ width: "100%", maxWidth: "1400px", padding: "60px 20px", textAlign: "center", color: "#6B7280", fontSize: "18px" }}>
-            No s'han trobat plats
-          </div>
-        ) : (
-          <div style={{ width: "100%", maxWidth: "1400px", backgroundColor: "#FFFFFF", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)", border: "1px solid #E5E7EB", overflow: "hidden" }}>
-            {/* Table Header */}
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 2.5fr 1.2fr 1fr 1fr 1.5fr", gap: "16px", padding: "16px 20px", backgroundColor: "#F9FAFB", borderBottom: "2px solid #E5E7EB", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#0F172A" }}>
-              <div>Nom del Plat</div>
-              <div>Categoria</div>
-              <div>Descripció</div>
-              <div>Temps Prep.</div>
-              <div>Porcions</div>
-              <div>Pes</div>
-              <div style={{ textAlign: "right" }}>Accions</div>
-            </div>
+        <div
+          style={{
+            marginBottom: 24,
+            padding: "12px 16px",
+            backgroundColor: "#FFFFFF",
+            borderRadius: "8px",
+            border: "1px solid #E5E7EB",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <label
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#6B7280",
+              }}
+            >
+              Exclude Allergen:
+            </label>
+            <select
+              value={excludedAllergenId || ""}
+              onChange={(e) => setExcludedAllergenId(e.target.value || null)}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 6,
+                border: "1px solid #E5E7EB",
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+            >
+              <option value="">None</option>
+              {allergens.map((allergen) => (
+                <option key={allergen.id} value={allergen.id}>
+                  {allergen.nameEs}
+                </option>
+              ))}
+            </select>
 
-            {/* Table Body */}
-            {filteredDishes.map((dish) => (
-              <div
-                key={dish.id}
+            {excludedAllergenId && (
+              <button
+                onClick={() => setExcludedAllergenId(null)}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "2fr 1.2fr 2.5fr 1.2fr 1fr 1fr 1.5fr",
-                  gap: "16px",
-                  padding: "16px 20px",
-                  borderBottom: "1px solid #E5E7EB",
-                  alignItems: "center",
+                  padding: "6px 10px",
+                  backgroundColor: "#EF4444",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 600,
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#F9FAFB";
-                  e.currentTarget.style.boxShadow = "inset 0 0 0 1px #E5E7EB";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                {/* Name */}
-                <div>
-                  <span style={{ fontFamily: "Fustat, sans-serif", fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
-                    {dish.name}
-                  </span>
-                </div>
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
 
-                {/* Category */}
-                <div>
-                  <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#FFFFFF", backgroundColor: getCategoryColor(dish.category), padding: "4px 10px", borderRadius: "4px", textAlign: "center" }}>
-                    {dish.category}
-                  </span>
-                </div>
+        <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
+          Showing {filteredDishes.length} of {dishes.length} dishes
+          {excludedAllergenId && allergens.find(a => a.id === excludedAllergenId) &&
+            ` (excluding ${allergens.find(a => a.id === excludedAllergenId)?.nameEs})`
+          }
+        </div>
 
-                {/* Description */}
-                <div>
-                  <span style={{ fontSize: "13px", color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                    {dish.description?.substring(0, 50)}
-                    {dish.description && dish.description.length > 50 ? "..." : ""}
-                  </span>
-                </div>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
+            <p>Loading dishes...</p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 0,
+              border: "1px solid #E5E7EB",
+              borderRadius: 12,
+              overflow: "hidden",
+              backgroundColor: "white",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr",
+                gap: 16,
+                padding: "16px 20px",
+                backgroundColor: "#F3F4F6",
+                fontWeight: 600,
+                fontSize: 12,
+                color: "#6B7280",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <div>Name</div>
+              <div>Category</div>
+              <div>Prep Time</div>
+              <div>Servings</div>
+              <div>Actions</div>
+            </div>
 
-                {/* Time */}
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#7C3AED" }}>
-                    ⏱️ {dish.preparation_time} min
-                  </span>
-                </div>
-
-                {/* Servings */}
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#22C55E" }}>
-                    👥 {dish.servings}
-                  </span>
-                </div>
-
-                {/* Weight */}
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#F59E0B" }}>
-                    📦 {dish.portion_size_kg} kg
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/dishes/${dish.id}`);
-                    }}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#2563EB",
-                      color: "#FFFFFF",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1D4ED8")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2563EB")}
-                  >
-                    Ver
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/dishes/${dish.id}/edit`);
-                    }}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#F59E0B",
-                      color: "#FFFFFF",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#D97706")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#F59E0B")}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // TODO: Add delete confirmation
-                    }}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#EF4444",
-                      color: "#FFFFFF",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#DC2626")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#EF4444")}
-                  >
-                    Eliminar
-                  </button>
-                </div>
+            {filteredDishes.length === 0 ? (
+              <div style={{ padding: "32px 20px", textAlign: "center", color: "#6B7280" }}>
+                No dishes found
               </div>
-            ))}
+            ) : (
+              filteredDishes.map((dish, index) => (
+                <div
+                  key={dish.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr",
+                    gap: 16,
+                    padding: "16px 20px",
+                    borderBottom: index < filteredDishes.length - 1 ? "1px solid #E5E7EB" : "none",
+                    alignItems: "center",
+                    backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#F3F4F6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      index % 2 === 0 ? "white" : "#F9FAFB";
+                  }}
+                >
+                  {editingId === dish.id && editingData ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editingData.name || ""}
+                        onChange={(e) =>
+                          setEditingData({ ...editingData, name: e.target.value })
+                        }
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                        }}
+                      />
+                      <input
+                        type="text"
+                        value={editingData.category || ""}
+                        onChange={(e) =>
+                          setEditingData({ ...editingData, category: e.target.value })
+                        }
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                        }}
+                      />
+                      <input
+                        type="number"
+                        value={editingData.preparation_time || ""}
+                        onChange={(e) =>
+                          setEditingData({
+                            ...editingData,
+                            preparation_time: Number(e.target.value),
+                          })
+                        }
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                        }}
+                      />
+                      <input
+                        type="number"
+                        value={editingData.servings || ""}
+                        onChange={(e) =>
+                          setEditingData({
+                            ...editingData,
+                            servings: Number(e.target.value),
+                          })
+                        }
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                        }}
+                      />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => handleSave(dish.id)}
+                          disabled={savingId === dish.id}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#22C55E",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: savingId === dish.id ? "not-allowed" : "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {savingId === dish.id ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#E5E7EB",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>
+                          {dish.name}
+                        </p>
+                        <p
+                          style={{
+                            margin: "4px 0 0",
+                            color: "#6B7280",
+                            fontSize: 12,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {dish.description}
+                        </p>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>
+                        {dish.category}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>
+                        {dish.preparation_time} min
+                      </div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>
+                        {dish.servings}
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => handleEdit(dish)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: "#7C3AED",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "4px 8px",
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(dish.id)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: "#EF4444",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "4px 8px",
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => navigate(`/dishes/${dish.id}`)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: "#3B82F6",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "4px 8px",
+                          }}
+                        >
+                          View
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

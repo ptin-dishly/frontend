@@ -7,9 +7,10 @@ import { GiCardboardBoxClosed } from "react-icons/gi";
 import { BsForkKnife } from "react-icons/bs";
 import { MdMenuBook } from "react-icons/md";
 import Logo from "./Logo";
+import UserProfile from "./UserProfile";
 
 interface MenuBarProps {
-  role: "admin" | "kitchen" | "waiter" | "host";
+  role: "admin" | "kitchen" | "waiter" | "sales";
 }
 
 type MenuItem = {
@@ -26,29 +27,26 @@ export default function MenuBar({ role }: MenuBarProps) {
   const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
-      { label: "Tickets", route: "/orders", icon: FaClipboardList },
+      { label: "Tables", route: "/tables", icon: BsForkKnife },
+      { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Ingredients' Stock", route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
+      { label: "Menus", route: "/menus", icon: MdMenuBook },
+      { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
+      { label: "Dishes", route: "/dishes", icon: BsForkKnife },
     ],
     kitchen: [
-      { label: "Tickets", route: "/orders", icon: FaClipboardList },
-      { label: "Ingredients' Stock", route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
+      { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
+      { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
+      { label: "Dishes", route: "/dishes", icon: BsForkKnife },
     ],
     waiter: [
       { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
-      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
+      { label: "Tables", route: "/tables", icon: BsForkKnife },
+      { label: "Menus", route: "/menus", icon: MdMenuBook },
     ],
-    host: [
-      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
+    sales: [
+      { label: "Tables", route: "/tables", icon: BsForkKnife },
       { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Dishes List", route: "/dishes", icon: BsForkKnife },
-      { label: "Menu Management", route: "/menu", icon: MdMenuBook },
     ],
   };
 
@@ -59,34 +57,29 @@ export default function MenuBar({ role }: MenuBarProps) {
     <div
       style={{
         width: "clamp(200px, 26vw, 250px)",
-        maxWidth: "100vw",
         backgroundColor: "#0F172A",
-        height: "100dvh",
-        padding: 20,
+        height: "calc(100dvh - 60px)",
+        padding: "20px",
         borderTopRightRadius: 50,
         borderBottomRightRadius: 50,
         color: "white",
         display: "flex",
         flexDirection: "column",
-        gap: 25,
+        gap: "20px",
         overflowY: "hidden",
       }}
     >
-
-      <div style={{ position: "relative", height: 220 }}>
-        <div style={{ position: "absolute", top: 80, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          <Logo />
-        </div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
+        <Logo />
       </div>
 
       <div
         style={{
-          marginTop: 40,
           overflowY: "auto",
-          maxHeight: "calc(100vh - 260px)",
+          maxHeight: "calc(100dvh - 300px)",
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          gap: "12px",
         }}
       >
         {items.map((item) => {
@@ -104,10 +97,10 @@ export default function MenuBar({ role }: MenuBarProps) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
+                gap: "10px",
                 width: "100%",
-                padding: "20px 20px",
-                borderRadius: 20,
+                padding: "14px 16px",
+                borderRadius: "14px",
                 border: "none",
                 background: isActive ? "var(--color-white)" : isHovered ? "#f5f5f7" : "transparent",
                 color: isActive || isHovered ? "var(--color-purple)" : "white",
@@ -115,13 +108,21 @@ export default function MenuBar({ role }: MenuBarProps) {
                 transition: "background 0.2s, color 0.2s",
                 textAlign: "left",
                 fontWeight: isActive ? 600 : 400,
+                fontSize: "14px",
               }}
+              title={item.label}
             >
-              <ItemIcon size={24} color={isActive || isHovered ? "var(--color-purple)" : "white"} />
-              <span style={{ fontSize: 16 }}>{item.label}</span>
+              <ItemIcon size={20} color={isActive || isHovered ? "var(--color-purple)" : "white"} />
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {item.label}
+              </span>
             </button>
           );
         })}
+      </div>
+
+      <div style={{ marginTop: "auto" }}>
+        <UserProfile />
       </div>
     </div>
   );

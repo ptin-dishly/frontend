@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getCurrentUser } from "../utils/storage";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import BigButton from "../components/BigButton";
@@ -7,6 +8,9 @@ import OrderCard from "../components/OrderCard";
 import Notification from "../components/Notification";
 
 export default function DashboardPage() {
+  const user = getCurrentUser();
+  const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
+  
   const [globalSearch, setGlobalSearch] = useState("");
   const [orderSearch, setOrderSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
@@ -50,7 +54,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: "flex", backgroundColor: "var(--color-white)", minHeight: "100vh" }}>
-      <MenuBar role="admin" />
+      <MenuBar role={userRole} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
         
@@ -58,9 +62,14 @@ export default function DashboardPage() {
         <div style={{ width: "100%", maxWidth: "1100px" }}>
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
-            <h1 style={{ fontFamily: "Fustat", color: "var(--color-dark-blue)", fontSize: 32, margin: 0 }}>
-              Benvingut de nou!
-            </h1>
+            <div>
+              <h1 style={{ fontFamily: "Fustat", color: "var(--color-dark-blue)", fontSize: 32, margin: "0 0 8px 0" }}>
+                Benvingut de nou, {user?.name}!
+              </h1>
+              <p style={{ color: "#6B7280", fontSize: 14, margin: 0 }}>
+                Role: <span style={{ fontWeight: 600, color: "#0F172A" }}>{user?.role?.toUpperCase()}</span>
+              </p>
+            </div>
             <Notification />
           </div>
 
@@ -73,9 +82,9 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 50, flexWrap: "wrap" }}>
-            <BigButton label="Total comandes" value={filteredOrders.length} variant="navy" />
-            <BigButton label="Pendents" value={5} variant="navy" />
-            <BigButton label="Nova comanda" variant="green" />
+            <BigButton label="Total comandes" value={filteredOrders.length.toString()} />
+            <BigButton label="Pendents" value="5" />
+            <BigButton label="Nova comanda" value="+" onClick={() => console.log("New order")} />
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30, flexWrap: "wrap", gap: 20 }}>
@@ -92,7 +101,6 @@ export default function DashboardPage() {
                 options={tableOptions}
                 value={tableFilter}
                 onChange={setTableFilter}
-                placeholder="Taula"
               />
             </div>
           </div>

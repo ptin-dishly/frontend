@@ -1,45 +1,56 @@
-// src/pages/DishDetailPage.tsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getCurrentUser } from "../utils/storage";
+import { recipeService, type Recipe, type RecipeIngredientDetail } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
-import { recipeService, type Recipe, type RecipeIngredientDetail } from "../services/api";
 
 export default function DishDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const user = getCurrentUser();
+  const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+
+  if (!["admin", "kitchen"].includes(userRole)) {
+    navigate("/dashboard");
+    return null;
+  }
+
   const [dish, setDish] = useState<Recipe | null>(null);
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDish, setEditedDish] = useState<Partial<Recipe> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchDishDetails = async () => {
-      if (!id) {
-        setError("No recipe ID provided");
-        return;
-      }
+      if (!id) return;
 
       setLoading(true);
       setError(null);
-      try {
-        // Fetch dish details
-        const dishRes = await recipeService.getById(id);
-        if (dishRes.success && dishRes.data) {
-          setDish(dishRes.data);
 
-          // Fetch ingredients
-          const ingredientsRes = await recipeService.getIngredients(id);
-          if (ingredientsRes.success && ingredientsRes.data) {
-            setIngredients(ingredientsRes.data);
-          }
-        } else {
-          setError("Failed to load dish details");
+      try {
+        const recipeRes = await recipeService.getById(id);
+        if (!recipeRes.success || !recipeRes.data) {
+          setError("Dish not found");
+          setLoading(false);
+          return;
         }
+
+        setDish(recipeRes.data);
+        setEditedDish(recipeRes.data);
+
+        const ingredientsRes = await recipeService.getIngredients(id);
+        if (ingredientsRes.success && ingredientsRes.data) {
+          setIngredients(ingredientsRes.data);
+        }
+
+        setLoading(false);
       } catch (err) {
-        setError("Error loading dish: " + String(err));
-        console.error(err);
-      } finally {
+        console.error("Error fetching dish details:", err);
+        setError("Failed to load dish details");
         setLoading(false);
       }
     };
@@ -47,218 +58,408 @@ export default function DishDetailPage() {
     fetchDishDetails();
   }, [id]);
 
+  const handleSave = async () => {
+    if (!dish || !editedDish || !id) return;
+
+    setSaving(true);
+    try {
+      const res = await recipeService.update(id, {
+        name: editedDish.name,
+        description: editedDish.description,
+        category: editedDish.category,
+        preparation_time: editedDish.preparation_time,
+        servings: editedDish.servings,
+        portion_size_kg: editedDish.portion_size_kg,
+      });
+
+      if (res.success && res.data) {
+        setDish(res.data);
+        setIsEditing(false);
+      } else {
+        setError("Failed to save dish");
+      }
+    } catch (err) {
+      console.error("Error saving dish:", err);
+      setError("Error saving dish");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditedDish(dish);
+    setIsEditing(false);
+  };
+
   if (loading) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#FAFAFA" }}>
-        <MenuBar role="admin" />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 20px", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ fontSize: "16px", color: "#6B7280" }}>Carregant detalls del plat...</p>
-        </div>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
+        <MenuBar role={userRole} />
+        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
+          <p style={{ fontSize: "16px", color: "#6B7280" }}>Loading...</p>
+        </main>
       </div>
     );
   }
 
   if (error || !dish) {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#FAFAFA" }}>
-        <MenuBar role="admin" />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 20px" }}>
-          <BackButton label="Tornar als plats" onClick={() => navigate("/dishes")} />
-          <div style={{ padding: "16px", backgroundColor: "#fff1f0", border: "1px solid #fca5a5", borderRadius: "8px", color: "#b91c1c", fontSize: "14px", marginTop: "20px" }}>
-            ⚠️ {error || "Plat no trobat"}
-          </div>
-        </div>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
+        <MenuBar role={userRole} />
+        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
+          <p style={{ fontSize: "16px", color: "#DC2626" }}>
+            {error || "Dish not found"}
+          </p>
+          <button
+            onClick={() => navigate("/dishes")}
+            style={{
+              marginTop: 20,
+              padding: "10px 20px",
+              backgroundColor: "#7C3AED",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Back to Dishes
+          </button>
+        </main>
       </div>
     );
   }
 
-  const getCategoryColor = (category: string): string => {
-    const colors: Record<string, string> = {
-      entrante: "#7C3AED",
-      segundo_plato: "#2563EB",
-      postre: "#EC4899",
-      salsa: "#F59E0B",
-    };
-    return colors[category] || "#6B7280";
-  };
-
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#FAFAFA" }}>
-      <MenuBar role="admin" />
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
+      <MenuBar role={userRole} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 20px", alignItems: "center" }}>
-        {/* Back Button */}
-        <div style={{ width: "100%", maxWidth: "1200px", marginBottom: "20px" }}>
-          <BackButton label="Tornar als plats" onClick={() => navigate("/dishes")} />
-        </div>
+      <main style={{ flex: 1, padding: "40px 48px" }}>
+        <BackButton label="Back to Dishes" />
 
-        {/* Header */}
-        <div style={{ width: "100%", maxWidth: "1200px", marginBottom: "40px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <h1 style={{ fontFamily: "Fustat, sans-serif", color: "#0F172A", fontSize: "28px", fontWeight: 700, margin: 0 }}>
-            {dish.name}
-          </h1>
-          <span style={{
-            display: "inline-block",
-            fontSize: "11px",
-            fontWeight: 700,
-            letterSpacing: "1px",
-            textTransform: "uppercase",
-            color: "#FFFFFF",
-            backgroundColor: getCategoryColor(dish.category),
-            padding: "6px 12px",
-            borderRadius: "4px",
-          }}>
-            {dish.category}
-          </span>
-        </div>
-
-        {/* Content Grid */}
-        <div style={{ width: "100%", maxWidth: "1200px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", marginBottom: "40px" }}>
-          {/* Info Section */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {/* Description Card */}
-            <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", padding: "24px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)", border: "1px solid #E5E7EB" }}>
-              <h2 style={{ fontFamily: "Fustat, sans-serif", fontSize: "18px", fontWeight: 700, color: "#0F172A", margin: "0 0 16px 0" }}>
-                Descripció
-              </h2>
-              <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: "1.6", margin: 0 }}>
-                {dish.description || "No hi ha descripció disponible"}
-              </p>
+        <div style={{ marginTop: 24, maxWidth: 900 }}>
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "24px",
+                fontSize: "14px",
+              }}
+            >
+              ⚠️ {error}
             </div>
+          )}
 
-            {/* Details Card */}
-            <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", padding: "24px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)", border: "1px solid #E5E7EB" }}>
-              <h2 style={{ fontFamily: "Fustat, sans-serif", fontSize: "18px", fontWeight: 700, color: "#0F172A", margin: "0 0 16px 0" }}>
-                Detalls del Plat
-              </h2>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                {/* Preparation Time */}
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "4px" }}>
-                    Temps de preparació
-                  </span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A" }}>
-                    {dish.preparation_time} minuts
-                  </span>
-                </div>
+          <div style={{ marginBottom: 32 }}>
+            {isEditing ? (
+              <>
+                <input
+                  type="text"
+                  value={editedDish?.name || ""}
+                  onChange={(e) =>
+                    setEditedDish({ ...editedDish, name: e.target.value })
+                  }
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: "#0F172A",
+                    margin: "0 0 8px",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #E5E7EB",
+                    width: "100%",
+                    fontFamily: "inherit",
+                  }}
+                />
+                <textarea
+                  value={editedDish?.description || ""}
+                  onChange={(e) =>
+                    setEditedDish({ ...editedDish, description: e.target.value })
+                  }
+                  style={{
+                    fontSize: 14,
+                    color: "#6B7280",
+                    margin: "0 0 16px",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #E5E7EB",
+                    width: "100%",
+                    fontFamily: "inherit",
+                    minHeight: 80,
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>
+                  {dish.name}
+                </h1>
+                <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>
+                  {dish.description}
+                </p>
+              </>
+            )}
 
-                {/* Servings */}
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "4px" }}>
-                    Porcions
-                  </span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 16,
+                marginTop: 16,
+              }}
+            >
+              <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  Category
+                </p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedDish?.category || ""}
+                    onChange={(e) =>
+                      setEditedDish({ ...editedDish, category: e.target.value })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                ) : (
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                    {dish.category}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  Prep Time
+                </p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    value={editedDish?.preparation_time || ""}
+                    onChange={(e) =>
+                      setEditedDish({
+                        ...editedDish,
+                        preparation_time: Number(e.target.value),
+                      })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                ) : (
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                    {dish.preparation_time} min
+                  </p>
+                )}
+              </div>
+
+              <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  Servings
+                </p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    value={editedDish?.servings || ""}
+                    onChange={(e) =>
+                      setEditedDish({
+                        ...editedDish,
+                        servings: Number(e.target.value),
+                      })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                ) : (
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
                     {dish.servings}
-                  </span>
-                </div>
+                  </p>
+                )}
+              </div>
 
-                {/* Portion Size */}
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "4px" }}>
-                    Pes de la porció
-                  </span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A" }}>
-                    {dish.portion_size_kg} kg
-                  </span>
-                </div>
-
-                {/* Version */}
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "4px" }}>
-                    Versió
-                  </span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A" }}>
-                    {dish.version}
-                  </span>
-                </div>
+              <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  Portion Size
+                </p>
+                <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                  {dish.portion_size_kg} kg
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Ingredients Section */}
-          <div>
-            <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", padding: "24px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)", border: "1px solid #E5E7EB" }}>
-              <h2 style={{ fontFamily: "Fustat, sans-serif", fontSize: "18px", fontWeight: 700, color: "#0F172A", margin: "0 0 16px 0" }}>
-                Ingredients
-              </h2>
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 16px", fontWeight: 600 }}>
+              Ingredients
+            </h2>
+
+            <div
+              style={{
+                border: "1px solid #E5E7EB",
+                borderRadius: 8,
+                overflow: "hidden",
+                backgroundColor: "white",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1fr 1fr",
+                  gap: 16,
+                  padding: "12px 16px",
+                  backgroundColor: "#F3F4F6",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "#6B7280",
+                  borderBottom: "1px solid #E5E7EB",
+                }}
+              >
+                <div>Name</div>
+                <div>Quantity</div>
+                <div>Optional</div>
+              </div>
+
               {ingredients.length === 0 ? (
-                <p style={{ fontSize: "14px", color: "#6B7280", fontStyle: "italic", margin: 0 }}>
-                  No hi ha ingredients registrats
-                </p>
+                <div style={{ padding: "24px 16px", textAlign: "center", color: "#6B7280" }}>
+                  No ingredients added
+                </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {ingredients.map((ingredient) => (
-                    <div
-                      key={ingredient.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "12px",
-                        backgroundColor: "#F9FAFB",
-                        borderRadius: "8px",
-                        border: "1px solid #E5E7EB",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
-                        <span style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A" }}>
-                          {ingredient.name}
-                        </span>
-                        {ingredient.isOptional && (
-                          <span style={{ fontSize: "10px", fontWeight: 700, color: "#F59E0B", backgroundColor: "#FEF3C7", padding: "2px 6px", borderRadius: "3px" }}>
-                            Opcional
-                          </span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#7C3AED" }}>
-                        {ingredient.quantity} {ingredient.unit}
+                ingredients.map((ingredient, index) => (
+                  <div
+                    key={ingredient.id}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "2fr 1fr 1fr",
+                      gap: 16,
+                      padding: "12px 16px",
+                      borderBottom:
+                        index < ingredients.length - 1 ? "1px solid #E5E7EB" : "none",
+                      backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>
+                        {ingredient.name}
+                      </p>
+                    </div>
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>
+                      {ingredient.quantity} {ingredient.unit}
+                    </div>
+                    <div>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          backgroundColor: ingredient.isOptional ? "#E0E7FF" : "#F3F4F6",
+                          color: ingredient.isOptional ? "#4C1D95" : "#6B7280",
+                          padding: "4px 12px",
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {ingredient.isOptional ? "Optional" : "Required"}
                       </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div style={{ width: "100%", maxWidth: "1200px", display: "flex", gap: "16px" }}>
-          <button
-            style={{
-              padding: "12px 24px",
-              backgroundColor: "#2563EB",
-              color: "#FFFFFF",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1D4ED8")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2563EB")}
-          >
-            Editar Plat
-          </button>
-          <button
-            style={{
-              padding: "12px 24px",
-              backgroundColor: "#EF4444",
-              color: "#FFFFFF",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#DC2626")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#EF4444")}
-          >
-            Eliminar Plat
-          </button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button
+              onClick={() => navigate("/dishes")}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#E5E7EB",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              Back
+            </button>
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#7C3AED",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                Edit Dish
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#22C55E",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#EF4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
