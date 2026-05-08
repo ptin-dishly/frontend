@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
 import { recipeService, allergenService, type Recipe, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
@@ -10,6 +11,7 @@ export default function DishPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (!["admin", "kitchen"].includes(userRole)) {
     navigate("/dashboard");
@@ -34,9 +36,7 @@ export default function DishPage() {
       setError(null);
       try {
         const res = await recipeService.getAll();
-        if (res.success && res.data) {
-          setDishes(res.data);
-        }
+        if (res.success && res.data) setDishes(res.data);
       } catch (err) {
         console.error("Error fetching dishes:", err);
         setError("Failed to load dishes");
@@ -44,7 +44,6 @@ export default function DishPage() {
         setLoading(false);
       }
     };
-
     fetchDishes();
   }, []);
 
@@ -52,51 +51,36 @@ export default function DishPage() {
     const fetchAllergens = async () => {
       try {
         const res = await allergenService.getAll();
-        if (res.success && res.data) {
-          setAllergens(res.data);
-        }
+        if (res.success && res.data) setAllergens(res.data);
       } catch (err) {
         console.error("Error fetching allergens:", err);
       }
     };
-
     fetchAllergens();
   }, []);
 
   useEffect(() => {
     const fetchRecipesWithAllergen = async () => {
-      if (!excludedAllergenId) {
-        setRecipesWithAllergen([]);
-        return;
-      }
-
+      if (!excludedAllergenId) { setRecipesWithAllergen([]); return; }
       try {
         const res = await recipeService.getByAllergen(excludedAllergenId);
-        if (res.success && res.data) {
-          const recipeIds = res.data.map((recipe) => recipe.id);
-          setRecipesWithAllergen(recipeIds);
-        }
+        if (res.success && res.data) setRecipesWithAllergen(res.data.map((recipe) => recipe.id));
       } catch (err) {
         console.error("Error fetching recipes with allergen:", err);
       }
     };
-
     fetchRecipesWithAllergen();
   }, [excludedAllergenId]);
 
   const categories = [
-    { label: "All Categories", value: "" },
-    ...Array.from(new Set(dishes.map((d) => d.category))).map((cat) => ({
-      label: cat,
-      value: cat,
-    })),
+    { label: t("common.all"), value: "" },
+    ...Array.from(new Set(dishes.map((d) => d.category))).map((cat) => ({ label: cat, value: cat })),
   ];
 
   const filteredDishes = dishes.filter((dish) => {
     const matchesSearch = dish.name.toLowerCase().includes(globalSearch.toLowerCase());
     const matchesCategory = !categoryFilter || dish.category === categoryFilter;
-    const matchesAllergen =
-      excludedAllergenId === null || !recipesWithAllergen.includes(dish.id);
+    const matchesAllergen = excludedAllergenId === null || !recipesWithAllergen.includes(dish.id);
     return matchesSearch && matchesCategory && matchesAllergen;
   });
 
@@ -107,7 +91,6 @@ export default function DishPage() {
 
   const handleSave = async (dishId: string) => {
     if (!editingData) return;
-
     setSavingId(dishId);
     try {
       const res = await recipeService.update(dishId, {
@@ -118,11 +101,8 @@ export default function DishPage() {
         servings: editingData.servings,
         portion_size_kg: editingData.portion_size_kg,
       });
-
       if (res.success && res.data) {
-        setDishes((prev) =>
-          prev.map((d) => (d.id === dishId ? res.data! : d))
-        );
+        setDishes((prev) => prev.map((d) => (d.id === dishId ? res.data! : d)));
         setEditingId(null);
         setEditingData(null);
       } else {
@@ -142,8 +122,7 @@ export default function DishPage() {
   };
 
   const handleDelete = async (dishId: string) => {
-    if (!confirm("Are you sure you want to delete this recipe?")) return;
-
+    if (!confirm(t("dishes.deleteConfirm"))) return;
     try {
       const res = await recipeService.delete(dishId);
       if (res.success) {
@@ -163,134 +142,59 @@ export default function DishPage() {
 
       <main style={{ flex: 1, padding: "40px 48px" }}>
         <div style={{ marginBottom: 30 }}>
-          <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>
-            Dishes
-          </h1>
+          <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>{t("dishes.title")}</h1>
         </div>
 
         {error && (
-          <div
-            style={{
-              backgroundColor: "#FEE2E2",
-              color: "#DC2626",
-              padding: "12px 16px",
-              borderRadius: "8px",
-              marginBottom: "24px",
-              fontSize: "14px",
-            }}
-          >
+          <div style={{ backgroundColor: "#FEE2E2", color: "#DC2626", padding: "12px 16px", borderRadius: "8px", marginBottom: "24px", fontSize: "14px" }}>
             ⚠️ {error}
           </div>
         )}
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 32,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, gap: 16, flexWrap: "wrap" }}>
           <div style={{ maxWidth: 300, width: "100%" }}>
-            <SearchBar
-              value={globalSearch}
-              onChange={setGlobalSearch}
-              placeholder="Search dishes..."
-            />
+            <SearchBar value={globalSearch} onChange={setGlobalSearch} placeholder={t("dishes.searchPlaceholder")} />
           </div>
 
-          <SelectDropdown
-            options={categories}
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-          />
+          <SelectDropdown options={categories} value={categoryFilter} onChange={setCategoryFilter} />
 
           <button
             onClick={() => navigate("/dishes/new")}
-            style={{
-              backgroundColor: "var(--color-green)",
-              color: "white",
-              border: "none",
-              padding: "10px 20px",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: "pointer",
-            }}
+            style={{ backgroundColor: "var(--color-green)", color: "white", border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
           >
-            + New Dish
+            {t("dishes.newDish")}
           </button>
         </div>
 
-        <div
-          style={{
-            marginBottom: 24,
-            padding: "12px 16px",
-            backgroundColor: "#FFFFFF",
-            borderRadius: "8px",
-            border: "1px solid #E5E7EB",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <label
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#6B7280",
-              }}
-            >
-              Exclude Allergen:
+        <div style={{ marginBottom: 24, padding: "12px 16px", backgroundColor: "#FFFFFF", borderRadius: "8px", border: "1px solid #E5E7EB" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
+              {t("dishes.excludeAllergen")}
             </label>
             <select
               value={excludedAllergenId || ""}
               onChange={(e) => setExcludedAllergenId(e.target.value || null)}
-              style={{
-                padding: "6px 10px",
-                borderRadius: 6,
-                border: "1px solid #E5E7EB",
-                fontSize: 12,
-                cursor: "pointer",
-              }}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 12, cursor: "pointer" }}
             >
-              <option value="">None</option>
+              <option value="">{t("common.none")}</option>
               {allergens.map((allergen) => (
-                <option key={allergen.id} value={allergen.id}>
-                  {allergen.nameEs}
-                </option>
+                <option key={allergen.id} value={allergen.id}>{allergen.nameEs}</option>
               ))}
             </select>
 
             {excludedAllergenId && (
               <button
                 onClick={() => setExcludedAllergenId(null)}
-                style={{
-                  padding: "6px 10px",
-                  backgroundColor: "#EF4444",
-                  color: "#FFFFFF",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                style={{ padding: "6px 10px", backgroundColor: "#EF4444", color: "#FFFFFF", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
               >
-                Clear
+                {t("common.clear")}
               </button>
             )}
           </div>
         </div>
 
         <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
-          Showing {filteredDishes.length} of {dishes.length} dishes
+          {t("dishes.showing", { filtered: filteredDishes.length, total: dishes.length })}
           {excludedAllergenId && allergens.find(a => a.id === excludedAllergenId) &&
             ` (excluding ${allergens.find(a => a.id === excludedAllergenId)?.nameEs})`
           }
@@ -298,232 +202,63 @@ export default function DishPage() {
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
-            <p>Loading dishes...</p>
+            <p>{t("dishes.loading")}</p>
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 0,
-              border: "1px solid #E5E7EB",
-              borderRadius: 12,
-              overflow: "hidden",
-              backgroundColor: "white",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr",
-                gap: 16,
-                padding: "16px 20px",
-                backgroundColor: "#F3F4F6",
-                fontWeight: 600,
-                fontSize: 12,
-                color: "#6B7280",
-                borderBottom: "1px solid #E5E7EB",
-              }}
-            >
-              <div>Name</div>
-              <div>Category</div>
-              <div>Prep Time</div>
-              <div>Servings</div>
-              <div>Actions</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0, border: "1px solid #E5E7EB", borderRadius: 12, overflow: "hidden", backgroundColor: "white" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr", gap: 16, padding: "16px 20px", backgroundColor: "#F3F4F6", fontWeight: 600, fontSize: 12, color: "#6B7280", borderBottom: "1px solid #E5E7EB" }}>
+              <div>{t("dishes.name")}</div>
+              <div>{t("dishes.category")}</div>
+              <div>{t("dishes.prepTime")}</div>
+              <div>{t("dishes.servings")}</div>
+              <div>{t("dishes.actions")}</div>
             </div>
 
             {filteredDishes.length === 0 ? (
               <div style={{ padding: "32px 20px", textAlign: "center", color: "#6B7280" }}>
-                No dishes found
+                {t("dishes.notFound")}
               </div>
             ) : (
               filteredDishes.map((dish, index) => (
                 <div
                   key={dish.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr",
-                    gap: 16,
-                    padding: "16px 20px",
-                    borderBottom: index < filteredDishes.length - 1 ? "1px solid #E5E7EB" : "none",
-                    alignItems: "center",
-                    backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#F3F4F6";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      index % 2 === 0 ? "white" : "#F9FAFB";
-                  }}
+                  style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr", gap: 16, padding: "16px 20px", borderBottom: index < filteredDishes.length - 1 ? "1px solid #E5E7EB" : "none", alignItems: "center", backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F3F4F6"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = index % 2 === 0 ? "white" : "#F9FAFB"; }}
                 >
                   {editingId === dish.id && editingData ? (
                     <>
-                      <input
-                        type="text"
-                        value={editingData.name || ""}
-                        onChange={(e) =>
-                          setEditingData({ ...editingData, name: e.target.value })
-                        }
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontFamily: "inherit",
-                        }}
-                      />
-                      <input
-                        type="text"
-                        value={editingData.category || ""}
-                        onChange={(e) =>
-                          setEditingData({ ...editingData, category: e.target.value })
-                        }
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontFamily: "inherit",
-                        }}
-                      />
-                      <input
-                        type="number"
-                        value={editingData.preparation_time || ""}
-                        onChange={(e) =>
-                          setEditingData({
-                            ...editingData,
-                            preparation_time: Number(e.target.value),
-                          })
-                        }
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontFamily: "inherit",
-                        }}
-                      />
-                      <input
-                        type="number"
-                        value={editingData.servings || ""}
-                        onChange={(e) =>
-                          setEditingData({
-                            ...editingData,
-                            servings: Number(e.target.value),
-                          })
-                        }
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontFamily: "inherit",
-                        }}
-                      />
+                      <input type="text" value={editingData.name || ""} onChange={(e) => setEditingData({ ...editingData, name: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                      <input type="text" value={editingData.category || ""} onChange={(e) => setEditingData({ ...editingData, category: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                      <input type="number" value={editingData.preparation_time || ""} onChange={(e) => setEditingData({ ...editingData, preparation_time: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                      <input type="number" value={editingData.servings || ""} onChange={(e) => setEditingData({ ...editingData, servings: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                          onClick={() => handleSave(dish.id)}
-                          disabled={savingId === dish.id}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#22C55E",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: savingId === dish.id ? "not-allowed" : "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {savingId === dish.id ? "Saving..." : "Save"}
+                        <button onClick={() => handleSave(dish.id)} disabled={savingId === dish.id} style={{ padding: "6px 12px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 6, cursor: savingId === dish.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600 }}>
+                          {savingId === dish.id ? t("common.saving") : t("common.save")}
                         </button>
-                        <button
-                          onClick={handleCancel}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#E5E7EB",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Cancel
+                        <button onClick={handleCancel} style={{ padding: "6px 12px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                          {t("common.cancel")}
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
                       <div>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>
-                          {dish.name}
-                        </p>
-                        <p
-                          style={{
-                            margin: "4px 0 0",
-                            color: "#6B7280",
-                            fontSize: 12,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {dish.description}
-                        </p>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>{dish.name}</p>
+                        <p style={{ margin: "4px 0 0", color: "#6B7280", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dish.description}</p>
                       </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        {dish.category}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        {dish.preparation_time} min
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        {dish.servings}
-                      </div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.category}</div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.preparation_time} min</div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.servings}</div>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                          onClick={() => handleEdit(dish)}
-                          style={{
-                            backgroundColor: "transparent",
-                            border: "none",
-                            color: "#7C3AED",
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: "4px 8px",
-                          }}
-                        >
-                          Edit
+                        <button onClick={() => handleEdit(dish)} style={{ backgroundColor: "transparent", border: "none", color: "#7C3AED", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>
+                          {t("common.edit")}
                         </button>
-                        <button
-                          onClick={() => handleDelete(dish.id)}
-                          style={{
-                            backgroundColor: "transparent",
-                            border: "none",
-                            color: "#EF4444",
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: "4px 8px",
-                          }}
-                        >
-                          Delete
+                        <button onClick={() => handleDelete(dish.id)} style={{ backgroundColor: "transparent", border: "none", color: "#EF4444", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>
+                          {t("common.delete")}
                         </button>
-                        <button
-                          onClick={() => navigate(`/dishes/${dish.id}`)}
-                          style={{
-                            backgroundColor: "transparent",
-                            border: "none",
-                            color: "#3B82F6",
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: "4px 8px",
-                          }}
-                        >
-                          View
+                        <button onClick={() => navigate(`/dishes/${dish.id}`)} style={{ backgroundColor: "transparent", border: "none", color: "#3B82F6", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>
+                          {t("common.view")}
                         </button>
                       </div>
                     </>
