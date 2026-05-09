@@ -56,10 +56,10 @@ export default function DashboardPage() {
     <div style={{ display: "flex", backgroundColor: "var(--color-white)", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 48px" }}>
         
         {/* Contenidor ajustat a 1100px per forçar una vista estètica de 3 columnes */}
-        <div style={{ width: "100%", maxWidth: "1100px" }}>
+        <div style={{ width: "100%" }}>
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
             <div>

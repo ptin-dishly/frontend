@@ -4,6 +4,8 @@ import { bookingService, type Booking } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
+import BookingCard from "../components/BookingCard";
+import styles from "./BookingPage.module.css";
 
 export default function BookingsPage() {
   const user = getCurrentUser();
@@ -13,7 +15,7 @@ export default function BookingsPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
+        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
           <p style={{ fontSize: "16px", color: "#6B7280" }}>
             Access denied. This page is only available for admin and sales roles.
           </p>
@@ -98,7 +100,7 @@ export default function BookingsPage() {
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
 
-      <main style={{ flex: 1, padding: "48px 56px", maxWidth: 1400, margin: "0 auto" }}>
+      <main style={{ flex: 1, padding: "40px 48px" }}>
         <div style={{ marginBottom: 30 }}>
           <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0 }}>Bookings</h1>
         </div>
@@ -154,84 +156,18 @@ export default function BookingsPage() {
             <p>Loading bookings...</p>
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-              gap: 20,
-            }}
-          >
+          <div className={styles.grid}>
             {filteredBookings.length === 0 ? (
               <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
                 No bookings found
               </p>
             ) : (
               filteredBookings.map((booking) => (
-                <div
+                <BookingCard
                   key={booking.id}
+                  booking={booking}
                   onClick={() => setSelectedBookingId(booking.id)}
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: 12,
-                    padding: 20,
-                    border: `2px solid ${getStatusColor(booking.status)}`,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <h3 style={{ margin: 0, fontSize: 18, color: "#0F172A" }}>
-                      {booking.name}
-                    </h3>
-                    <span
-                      style={{
-                        backgroundColor: getStatusColor(booking.status),
-                        color: "white",
-                        padding: "4px 12px",
-                        borderRadius: 20,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {booking.status}
-                    </span>
-                  </div>
-
-                  <p style={{ margin: "8px 0", color: "#6B7280", fontSize: 14 }}>
-                    📅 {booking.date} at {booking.time}
-                  </p>
-
-                  <p style={{ margin: "8px 0", color: "#6B7280", fontSize: 14 }}>
-                    👥 {booking.guests} guests
-                  </p>
-
-                  <p style={{ margin: "8px 0", color: "#6B7280", fontSize: 14 }}>
-                    📞 {booking.phone}
-                  </p>
-
-                  {booking.specialRequests && (
-                    <p style={{ margin: "8px 0", color: "#7C3AED", fontSize: 13, fontStyle: "italic" }}>
-                      ✨ {booking.specialRequests}
-                    </p>
-                  )}
-                </div>
+                />
               ))
             )}
           </div>

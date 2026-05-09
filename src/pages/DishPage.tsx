@@ -163,7 +163,7 @@ export default function DishPage() {
 
       <main style={{ flex: 1, padding: "40px 48px" }}>
         <div style={{ marginBottom: 30 }}>
-          <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>
+          <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0, fontWeight: 700 }}>
             Dishes
           </h1>
         </div>
