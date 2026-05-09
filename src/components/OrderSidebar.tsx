@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import CounterInput from "./CounterInput";
 import DeleteButton from "./DeleteButton";
 import sampleImage from "../assets/imagen.png";
+import { getCurrentUser } from "../utils/storage";
 
 type OrderItem = {
   id: string;
@@ -24,6 +26,9 @@ export default function OrderSidebar({
   onQuantityChange,
   onDelete,
 }: OrderSidebarProps) {
+  const { t } = useTranslation();
+  const user = getCurrentUser();
+
   const subtotal = items.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
@@ -69,9 +74,9 @@ export default function OrderSidebar({
             }}
           >
             <div>
-              <h2 style={{ margin: 0 }}>Cashier:</h2>
+              <h2 style={{ margin: 0 }}>{t("orderSidebar.cashier")}</h2>
               <p style={{ marginTop: 8, color: "var(--color-dark-blue)" }}>
-                Marc Ortiz
+                {user?.name ?? "—"}
               </p>
             </div>
 
@@ -94,11 +99,11 @@ export default function OrderSidebar({
             </div>
           </div>
 
-          <h2 style={{ marginBottom: 20 }}>Order Details</h2>
+          <h2 style={{ marginBottom: 20 }}>{t("orderSidebar.orderDetails")}</h2>
 
           {items.length === 0 ? (
             <p style={{ color: "var(--color-gray)" }}>
-              Encara no hi ha plats afegits.
+              {t("orderSidebar.empty")}
             </p>
           ) : (
             items.map((item) => (
@@ -143,12 +148,12 @@ export default function OrderSidebar({
         <div>
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <strong>Subtotal</strong>
+              <strong>{t("orderSidebar.subtotal")}</strong>
               <span>{subtotal.toFixed(2)}€</span>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <strong>IVA 21% (inc.)</strong>
+              <strong>{t("orderSidebar.iva")}</strong>
               <span>{iva.toFixed(2)}€</span>
             </div>
 
@@ -160,7 +165,7 @@ export default function OrderSidebar({
                 fontWeight: 700,
               }}
             >
-              <span>Total</span>
+              <span>{t("orderSidebar.total")}</span>
               <span>{total.toFixed(2)}€</span>
             </div>
           </div>
@@ -177,7 +182,7 @@ export default function OrderSidebar({
               cursor: "pointer",
             }}
           >
-            Send order
+            {t("orderSidebar.sendOrder")}
           </button>
         </div>
       </aside>
