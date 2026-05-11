@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import AlergenFilter from "../components/AlergenFilter";
 import BackButton from "../components/BackButton";
 import BigButton from "../components/BigButton";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getCurrentUser } from "../utils/storage";
@@ -65,6 +65,7 @@ export default function BookingsPage() {
     return matchesStatus && matchesSearch;
   });
 
+  /*
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed": return "#22C55E";
@@ -73,6 +74,7 @@ export default function BookingsPage() {
       default: return "#6B7280";
     }
   };
+  */
 
   const selectedBooking = bookings.find((b) => b.id === selectedBookingId);
 
