@@ -10,11 +10,16 @@ body {
 
 /* Colors globals */
 :root {
+  --menubar-width: clamp(220px, 28vw, 280px);
   --color-white: #FAFAFA;
   --color-purple: #7C3AED;
   --color-dark-blue: #0F172A;
   --color-green: #22C55E;
   --color-gray: #6B7280;
+}
+
+body.has-fixed-menubar #root {
+  padding-left: var(--menubar-width);
 }
 
 /* Boxes de colors per TestPage */
@@ -35,3 +40,4 @@ h3 { font-family: 'Commissioner', sans-serif; font-size: 16px; }
 h4 { font-family: 'Commissioner', sans-serif; font-size: 14px; opacity: 0.65; }
 p  { font-family: 'Commissioner', sans-serif; font-size: 12px; }
 p.bold-sm { font-family: 'Commissioner', sans-serif; font-size: 12px; font-weight: 700; }
+

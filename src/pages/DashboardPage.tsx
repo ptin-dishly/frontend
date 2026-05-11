@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
@@ -10,13 +11,13 @@ import Notification from "../components/Notification";
 export default function DashboardPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
-  
+  const { t } = useTranslation();
+
   const [globalSearch, setGlobalSearch] = useState("");
   const [orderSearch, setOrderSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
   const [activeOrder, setActiveOrder] = useState<any>(null);
 
-  // Llista de 12 comandes d'exemple
   const orders = [
     { id: "9932", table: "12", total: 40.50, items: [{ name: "Lasanya", quantity: 2, price: 14.00 }, { name: "Aigua", quantity: 1, price: 2.50 }] },
     { id: "9933", table: "05", total: 15.20, items: [{ name: "Amanida de Formatge", quantity: 1, price: 12.50 }] },
@@ -33,12 +34,12 @@ export default function DashboardPage() {
   ];
 
   const tableOptions = [
-    { label: "Totes les taules", value: "" },
+    { label: t("dashboard.allTables"), value: "" },
     ...orders
       .map((o) => o.table)
-      .filter((t, i, arr) => arr.indexOf(t) === i)
+      .filter((tbl, i, arr) => arr.indexOf(tbl) === i)
       .sort()
-      .map((t) => ({ label: `Taula ${t}`, value: t })),
+      .map((tbl) => ({ label: t("dashboard.table", { number: tbl }), value: tbl })),
   ];
 
   const filteredOrders = orders.filter((order) => {
@@ -56,46 +57,49 @@ export default function DashboardPage() {
     <div style={{ display: "flex", backgroundColor: "var(--color-white)", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 48px" }}>
         
         {/* Contenidor ajustat a 1100px per forçar una vista estètica de 3 columnes */}
-        <div style={{ width: "100%", maxWidth: "1100px" }}>
+        <div style={{ width: "100%" }}>
           
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
+        <div style={{ width: "100%", maxWidth: "1100px" }}>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
             <div>
               <h1 style={{ fontFamily: "Fustat", color: "var(--color-dark-blue)", fontSize: 32, margin: "0 0 8px 0" }}>
-                Benvingut de nou, {user?.name}!
+                {t("dashboard.welcome", { name: user?.name })}
               </h1>
               <p style={{ color: "#6B7280", fontSize: 14, margin: 0 }}>
-                Role: <span style={{ fontWeight: 600, color: "#0F172A" }}>{user?.role?.toUpperCase()}</span>
+                {t("dashboard.role")} <span style={{ fontWeight: 600, color: "#0F172A" }}>{user?.role?.toUpperCase()}</span>
               </p>
             </div>
             <Notification />
           </div>
 
           <div style={{ marginBottom: 40, display: "flex", justifyContent: "center" }}>
-            <SearchBar 
-              value={globalSearch} 
-              onChange={setGlobalSearch} 
-              placeholder="Cerca comandes o taules..." 
+            <SearchBar
+              value={globalSearch}
+              onChange={setGlobalSearch}
+              placeholder={t("dashboard.searchPlaceholder")}
             />
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 50, flexWrap: "wrap" }}>
-            <BigButton label="Total comandes" value={filteredOrders.length.toString()} />
-            <BigButton label="Pendents" value="5" />
-            <BigButton label="Nova comanda" value="+" onClick={() => console.log("New order")} />
+            <BigButton label={t("dashboard.totalOrders")} value={filteredOrders.length.toString()} />
+            <BigButton label={t("dashboard.pending")} value="5" />
+            <BigButton label={t("dashboard.newOrder")} value="+" onClick={() => console.log("New order")} />
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30, flexWrap: "wrap", gap: 20 }}>
             <h2 style={{ fontFamily: "Fustat", fontSize: 22, color: "var(--color-dark-blue)", margin: 0 }}>
-              Comandes Actives
+              {t("dashboard.activeOrders")}
             </h2>
             <div style={{ display: "flex", gap: 16 }}>
               <SearchBar
                 value={orderSearch}
                 onChange={setOrderSearch}
-                placeholder="Cerca ID..."
+                placeholder={t("dashboard.searchId")}
               />
               <SelectDropdown
                 options={tableOptions}
@@ -105,13 +109,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Graella amb espaiat generós (gap 35px) i 3 columnes per línia */}
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
             gap: "35px",
             justifyItems: "center",
-            width: "100%"
+            width: "100%",
           }}>
             {filteredOrders.map((order) => (
               <div
@@ -136,19 +139,19 @@ export default function DashboardPage() {
       {activeOrder && (
         <div style={{ position: "fixed", top: 20, right: 20, zIndex: 1000, animation: "slideIn 0.3s ease-out" }}>
           <div style={{ position: "relative", filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.2))" }}>
-            <button 
+            <button
               onClick={() => setActiveOrder(null)}
               style={{
-                position: "absolute", top: -12, left: -12, background: "var(--color-dark-blue)", 
+                position: "absolute", top: -12, left: -12, background: "var(--color-dark-blue)",
                 color: "white", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer",
-                fontWeight: "bold", zIndex: 1100, fontSize: 16
+                fontWeight: "bold", zIndex: 1100, fontSize: 16,
               }}
             >✕</button>
-            <OrderCard 
-              orderId={activeOrder.id} 
-              tableNumber={activeOrder.table} 
-              items={activeOrder.items} 
-              total={activeOrder.total} 
+            <OrderCard
+              orderId={activeOrder.id}
+              tableNumber={activeOrder.table}
+              items={activeOrder.items}
+              total={activeOrder.total}
             />
           </div>
         </div>
