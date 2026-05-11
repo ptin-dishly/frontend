@@ -1,79 +1,173 @@
-/* 
-*****************************************
-/////////////// BLUE PANEL //////////////
-*****************************************
-*/ 
-.panel {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-
-  width: 100%;
-  height: 66vh;
-  box-sizing: border-box;
-  
-  background-color: var(--color-dark-blue);
-  border-top-left-radius: 40px;
-  border-top-right-radius: 40px;
-
-  padding: 40px;
+.page {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  overflow-x: hidden;
+  background: linear-gradient(to bottom, #f0eef8 0%, #f0eef8 38%, #0d0c1a 38%, #0d0c1a 100%);
+  padding: 48px 16px 64px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Pantalles petites (mòbil) */
-@media (max-width: 600px) {
-  .panel {
-    height: 70vh;
-    padding: 20px;
-    border-top-left-radius: 25px;
-    border-top-right-radius: 25px;
-  }
+.logo {
+  width: 200px;
+  height: auto;
+  margin-bottom: 40px;
 }
 
-/* 
-***********************************
-/////////////// FORM //////////////
-***********************************
-*/ 
-.form_style {
-    padding-top: 5%;
-    width: 100%;
-    max-width: 400px;
-    color: var(--color-white);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.panel {
+  background: #16152a;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.form_style label {
-    text-align: left;
-    align-self: flex-start;
-    width: 100%;
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 8px;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #8b8aa0;
+  text-align: center;
+  margin: 0 0 4px;
+}
+
+.divider_line {
+  width: 60px;
+  height: 2px;
+  background: #6c5ce7;
+  border-radius: 2px;
+  margin: 10px auto 28px;
+}
+
+.error_box {
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: #f87171;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+
+.field_label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #c5c4d4;
+  margin-bottom: 7px;
+  margin-top: 16px;
+}
+
+.input_wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input_icon {
+  position: absolute;
+  left: 14px;
+  color: #6c5ce7;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
 }
 
 .input {
   width: 100%;
+  background: #0d0c1a;
+  border: 1.5px solid #2e2c4a;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 15px;
+  padding: 13px 14px 13px 44px;
+  outline: none;
+  transition: border-color 0.2s;
   box-sizing: border-box;
-  padding: 12px 10px;
-  border-radius: 15px;
-    border: none;
-    align-self: center;
+  font-family: inherit;
 }
 
-.login_button {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px 10px;
-  border-radius: 15px;
-  margin-top: 10px;
-  background-color: var(--color-green);
-  color: var(--color-white);
-  font-weight: bold;
+.input::placeholder {
+  color: #4a4860;
+}
+
+.input:focus {
+  border-color: #6c5ce7;
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle_btn {
+  position: absolute;
+  right: 14px;
+  background: none;
   border: none;
   cursor: pointer;
-  align-self: center;
+  color: #6c5ce7;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.toggle_btn:hover {
+  color: #a29bfe;
+}
+
+.submit_btn {
+  width: 100%;
+  background: #2dd36f;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 14px;
+  margin-top: 26px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.2s, transform 0.1s;
+  font-family: inherit;
+}
+
+.submit_btn:hover:not(:disabled) {
+  background: #26bc61;
+}
+
+.submit_btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.submit_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+.forgot_link {
+  display: block;
+  text-align: center;
+  color: #7c6ff0;
+  text-decoration: none;
+  font-size: 14px;
+  margin-top: 16px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot_link:hover {
+  color: #a29bfe;
 }

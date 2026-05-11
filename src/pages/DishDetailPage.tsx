@@ -90,8 +90,8 @@ export default function DishDetailPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
-          <p style={{ fontSize: "16px", color: "#6B7280" }}>{t("dishDetail.loading")}</p>
+        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
+          <p style={{ fontSize: "16px", color: "#6B7280" }}>Loading...</p>
         </main>
       </div>
     );
@@ -101,8 +101,10 @@ export default function DishDetailPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
-          <p style={{ fontSize: "16px", color: "#DC2626" }}>{error || t("dishDetail.notFound")}</p>
+        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
+          <p style={{ fontSize: "16px", color: "#DC2626" }}>
+            {error || "Dish not found"}
+          </p>
           <button
             onClick={() => navigate("/dishes")}
             style={{ marginTop: 20, padding: "10px 20px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}

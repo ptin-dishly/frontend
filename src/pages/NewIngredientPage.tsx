@@ -48,8 +48,8 @@ export default function NewIngredientPage() {
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
 
-      <main style={{ flex: 1, padding: "48px 56px", maxWidth: 1400, margin: "0 auto" }}>
-        <BackButton label={t("newIngredient.backToIngredients")} />
+      <main style={{ flex: 1, padding: "40px 48px" }}>
+        <BackButton label="Back to Ingredients" />
 
         <h1 style={{ fontSize: 32, color: "#0F172A", margin: "20px 0" }}>
           {t("newIngredient.title")}

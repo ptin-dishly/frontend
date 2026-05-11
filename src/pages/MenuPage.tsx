@@ -192,8 +192,8 @@ export default function MenusPage() {
 
         <main style={{ flex: 1, padding: "40px 48px" }}>
           <div style={{ marginBottom: 30 }}>
-            <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>
-              {t("menus.title")}
+            <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0, fontWeight: 700 }}>
+              Menus
             </h1>
           </div>
 

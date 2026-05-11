@@ -67,8 +67,8 @@ export default function RecipeCreatePage() {
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
       <MenuBar role={userRole} />
 
-      <main style={{ flex: 1, padding: "48px 56px", maxWidth: 900 }}>
-        <BackButton label={t("dishCreate.backToDishes")} />
+      <main style={{ flex: 1, padding: "40px 48px" }}>
+        <BackButton label="Back to Dishes" />
 
         <h1 style={{ fontSize: 32, color: "#0F172A", margin: "20px 0", fontWeight: 700 }}>
           {t("dishCreate.title")}

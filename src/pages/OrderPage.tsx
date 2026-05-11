@@ -15,7 +15,7 @@ export default function OrderPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
+        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
           <p style={{ fontSize: "16px", color: "#6B7280" }}>
             {t("orders.accessDenied")}
           </p>
@@ -90,7 +90,7 @@ export default function OrderPage() {
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
 
-      <main style={{ flex: 1, padding: "48px 56px", maxWidth: 1400, margin: "0 auto" }}>
+      <main style={{ flex: 1, padding: "40px 48px" }}>
         <div style={{ marginBottom: 30 }}>
           <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0 }}>{t("orders.title")}</h1>
         </div>
