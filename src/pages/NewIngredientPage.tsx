@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
@@ -8,6 +9,7 @@ export default function NewIngredientPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (!["admin", "kitchen"].includes(userRole)) {
     navigate("/dashboard");
@@ -29,12 +31,8 @@ export default function NewIngredientPage() {
     }
 
     setLoading(true);
-
     try {
-      // Simulate API call - will use real endpoint once backend is ready
       console.log("Creating ingredient (using fake data):", { name, description });
-
-      // For now, just show success message
       setTimeout(() => {
         navigate("/ingredients");
       }, 1000);
@@ -54,100 +52,43 @@ export default function NewIngredientPage() {
         <BackButton label="Back to Ingredients" />
 
         <h1 style={{ fontSize: 32, color: "#0F172A", margin: "20px 0" }}>
-          Create New Ingredient
+          {t("newIngredient.title")}
         </h1>
 
-        <div
-          style={{
-            backgroundColor: "#FEF3C7",
-            color: "#92400E",
-            padding: "12px 16px",
-            borderRadius: "8px",
-            marginBottom: "24px",
-            fontSize: "13px",
-          }}
-        >
-          ℹ️ This feature will be saved to the backend once the endpoint is ready.
+        <div style={{ backgroundColor: "#FEF3C7", color: "#92400E", padding: "12px 16px", borderRadius: "8px", marginBottom: "24px", fontSize: "13px" }}>
+          ℹ️ {t("newIngredient.backendNotice")}
         </div>
 
         {error && (
-          <div
-            style={{
-              backgroundColor: "#FEE2E2",
-              color: "#DC2626",
-              padding: "16px",
-              borderRadius: "8px",
-              marginBottom: "24px",
-              fontSize: "14px",
-            }}
-          >
+          <div style={{ backgroundColor: "#FEE2E2", color: "#DC2626", padding: "16px", borderRadius: "8px", marginBottom: "24px", fontSize: "14px" }}>
             ⚠️ {error}
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            maxWidth: 500,
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-          }}
-        >
+        <form onSubmit={handleSubmit} style={{ maxWidth: 500, display: "flex", flexDirection: "column", gap: 20 }}>
           <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 8,
-                fontWeight: 600,
-                color: "#0F172A",
-              }}
-            >
-              Ingredient Name *
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: "#0F172A" }}>
+              {t("newIngredient.name")}
             </label>
             <input
               type="text"
-              placeholder="e.g., Pasta lasaña"
+              placeholder={t("newIngredient.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: 8,
-                border: "1px solid #E5E7EB",
-                fontSize: 14,
-                fontFamily: "inherit",
-                boxSizing: "border-box",
-              }}
+              style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }}
               required
             />
           </div>
 
           <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 8,
-                fontWeight: 600,
-                color: "#0F172A",
-              }}
-            >
-              Description
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: "#0F172A" }}>
+              {t("newIngredient.description")}
             </label>
             <textarea
-              placeholder="Optional description"
+              placeholder={t("newIngredient.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: 8,
-                border: "1px solid #E5E7EB",
-                fontSize: 14,
-                fontFamily: "inherit",
-                boxSizing: "border-box",
-                minHeight: 100,
-              }}
+              style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", minHeight: 100 }}
             />
           </div>
 
@@ -155,35 +96,16 @@ export default function NewIngredientPage() {
             <button
               type="button"
               onClick={() => navigate("/ingredients")}
-              style={{
-                flex: 1,
-                padding: "12px 24px",
-                backgroundColor: "#E5E7EB",
-                border: "none",
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: 14,
-              }}
+              style={{ flex: 1, padding: "12px 24px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              style={{
-                flex: 1,
-                padding: "12px 24px",
-                backgroundColor: loading ? "#9CA3AF" : "#22C55E",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: 14,
-              }}
+              style={{ flex: 1, padding: "12px 24px", backgroundColor: loading ? "#9CA3AF" : "#22C55E", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontSize: 14 }}
             >
-              {loading ? "Creating..." : "Create Ingredient"}
+              {loading ? t("newIngredient.creating") : t("newIngredient.createButton")}
             </button>
           </div>
         </form>

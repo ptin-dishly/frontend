@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { sessionService, userService } from "../services/api";
 import { setTokens, setCurrentUser, clearAllAuth } from "../utils/storage";
 import logoII from "../assets/logo_II.png";
@@ -7,6 +8,7 @@ import login_style from "./LogInPage.module.css";
 
 export default function LogIn() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("marc@calblay.cat");
   const [password, setPassword] = useState("secret123");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +26,7 @@ export default function LogIn() {
       console.log("✅ Login response:", loginRes);
 
       if (!loginRes.success || !loginRes.data) {
-        setError(loginRes.message || "Login failed. Please check your credentials.");
+        setError(loginRes.message || t("auth.loginFailed"));
         setLoading(false);
         return;
       }
@@ -37,7 +39,7 @@ export default function LogIn() {
       console.log("✅ User response:", userRes);
 
       if (!userRes.success || !userRes.data) {
-        setError(userRes.message || "Failed to fetch user information.");
+        setError(userRes.message || t("auth.fetchUserFailed"));
         clearAllAuth();
         setLoading(false);
         return;
@@ -61,7 +63,7 @@ export default function LogIn() {
         navigate("/main");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred during login";
+      const errorMessage = err instanceof Error ? err.message : t("auth.loginFailed");
       setError(errorMessage);
       console.error("❌ Login error:", err);
       clearAllAuth();
@@ -148,7 +150,7 @@ export default function LogIn() {
             className={login_style.submit_btn}
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Submit"}
+            {loading ? t("auth.loggingIn") : t("auth.submit")}
           </button>
         </form>
 
