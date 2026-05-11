@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
@@ -40,14 +40,13 @@ export default function RecipeCreatePage() {
     setLoading(true);
     try {
       const res = await recipeService.create({
-        establishmentId: "22222222-0002-0002-0002-000000000001",
+        establishment_id: "22222222-0002-0002-0002-000000000001",
         name: formData.name,
         description: formData.description || null,
         category: formData.category,
-        portionSizeKg: formData.portionSizeKg,
+        portion_size_kg: formData.portionSizeKg,
         servings: formData.servings,
-        preparationTime: formData.preparationTime,
-        createdBy: user?.id || "99999999-9999-9999-9999-000000000001",
+        preparation_time: formData.preparationTime,
       });
 
       if (res.success) {

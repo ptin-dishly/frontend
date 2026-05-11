@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
 import { getCurrentUser } from "../utils/storage";
 import { bookingService, type Booking } from "../services/api";
 import MenuBar from "../components/MenuBar";

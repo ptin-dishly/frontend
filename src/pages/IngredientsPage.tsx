@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
@@ -6,8 +6,6 @@ import { ingredientService, allergenService, type Ingredient, type Allergen } fr
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
-import BigButton from "../components/BigButton";
-import NewIngredientCard from "../components/NewIngredientCard";
 
 import glutenImg from "../assets/gluten.png";
 import crustaceansImg from "../assets/crustaceans.png";
