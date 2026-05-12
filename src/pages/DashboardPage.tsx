@@ -7,10 +7,16 @@ import SelectDropdown from "../components/SelectDropdown";
 import OrderCard from "../components/OrderCard";
 import Notification from "../components/Notification";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// NOU IMPORT: FloorMapSection
+// Component que mostra el mapa 2D de la sala al Dashboard
+// ─────────────────────────────────────────────────────────────────────────────
+import FloorMapSection from "../components/FloorMapSection";
+
 export default function DashboardPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
-  
+
   const [globalSearch, setGlobalSearch] = useState("");
   const [orderSearch, setOrderSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
@@ -57,10 +63,10 @@ export default function DashboardPage() {
       <MenuBar role={userRole} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
-        
+
         {/* Contenidor ajustat a 1100px per forçar una vista estètica de 3 columnes */}
         <div style={{ width: "100%", maxWidth: "1100px" }}>
-          
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
             <div>
               <h1 style={{ fontFamily: "Fustat", color: "var(--color-dark-blue)", fontSize: 32, margin: "0 0 8px 0" }}>
@@ -73,11 +79,20 @@ export default function DashboardPage() {
             <Notification />
           </div>
 
+          {/* ─────────────────────────────────────────────────────────────────
+              NOU: Mapa de Sala
+              S'afegeix aquí, just després del header de benvinguda i
+              abans de les estadístiques i la llista de comandes.
+              El component llegeix el layout de localStorage i mostra
+              les taules en vermell (ocupades) o verd (lliures).
+          ───────────────────────────────────────────────────────────────── */}
+          <FloorMapSection />
+
           <div style={{ marginBottom: 40, display: "flex", justifyContent: "center" }}>
-            <SearchBar 
-              value={globalSearch} 
-              onChange={setGlobalSearch} 
-              placeholder="Cerca comandes o taules..." 
+            <SearchBar
+              value={globalSearch}
+              onChange={setGlobalSearch}
+              placeholder="Cerca comandes o taules..."
             />
           </div>
 
@@ -136,19 +151,19 @@ export default function DashboardPage() {
       {activeOrder && (
         <div style={{ position: "fixed", top: 20, right: 20, zIndex: 1000, animation: "slideIn 0.3s ease-out" }}>
           <div style={{ position: "relative", filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.2))" }}>
-            <button 
+            <button
               onClick={() => setActiveOrder(null)}
               style={{
-                position: "absolute", top: -12, left: -12, background: "var(--color-dark-blue)", 
+                position: "absolute", top: -12, left: -12, background: "var(--color-dark-blue)",
                 color: "white", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer",
                 fontWeight: "bold", zIndex: 1100, fontSize: 16
               }}
             >✕</button>
-            <OrderCard 
-              orderId={activeOrder.id} 
-              tableNumber={activeOrder.table} 
-              items={activeOrder.items} 
-              total={activeOrder.total} 
+            <OrderCard
+              orderId={activeOrder.id}
+              tableNumber={activeOrder.table}
+              items={activeOrder.items}
+              total={activeOrder.total}
             />
           </div>
         </div>
