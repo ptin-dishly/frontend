@@ -109,16 +109,13 @@ const PANEL_W = 320;
 
 const API_BASE = import.meta.env.VITE_API_URL as string;
 
-const ALLERGENS = [
-  { id: "gluten", label: "Gluten", emoji: "🌾" },
-  { id: "lactosa", label: "Lactosa", emoji: "🥛" },
-  { id: "fruits_secs", label: "Fruits secs", emoji: "🥜" },
-  { id: "ou", label: "Ou", emoji: "🥚" },
-  { id: "peix", label: "Peix", emoji: "🐟" },
-  { id: "marisc", label: "Marisc", emoji: "🦐" },
-  { id: "soja", label: "Soja", emoji: "🫘" },
-  { id: "mostassa", label: "Mostassa", emoji: "🌱" },
-];
+const ALLERGEN_EMOJI: Record<string, string> = {
+  GLU: "🌾", CRU: "🦐", HUE: "🥚", PES: "🐟", CAC: "🥜",
+  SOJ: "🫘", LAC: "🥛", FRU: "🌰", API: "🌿", MOS: "🌱",
+  SES: "🌾", SUL: "🍷", ALT: "🌱", MOL: "🐚",
+};
+
+interface AllergenOption { id: string; label: string; emoji: string; }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS API
@@ -303,6 +300,7 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
   const [menuItems, setMenuItems] = useState<ApiMenuItem[]>([]);
   const [occupiedTableIds, setOccupiedTableIds] = useState<Set<string>>(new Set());
   const [activeOrders, setActiveOrders] = useState<Record<string, ApiOrder>>({});
+  const [allergenList, setAllergenList] = useState<AllergenOption[]>([]);
 
   // ── Panell lateral ────────────────────────────────────────────────────────
   const [panel, setPanel] = useState<Panel>(null);
@@ -346,31 +344,56 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
 
   // ── Càrrega inicial: taules DB + sales + menú + taules ocupades ────────────
   useEffect(() => {
-    apiFetch<ApiTable[]>("/tables").then(tables => {
-      setDbTables(tables);
-      // Sincronitza dbId en taules del mapa que encara no en tenen
-      setData(prev => {
-        let changed = false;
-        const newTables: Record<string, Table[]> = {};
-        for (const [z, ts] of Object.entries(prev.tables)) {
-          newTables[z] = ts.map(t => {
-            if (t.dbId) return t;
-            const found = tables.find(dt => dt.tableNumber === String(t.number));
-            if (found) { changed = true; return { ...t, dbId: found.id }; }
-            return t;
-          });
-        }
-        if (!changed) return prev;
-        const next = { ...prev, tables: newTables };
-        saveFloorData(next);
-        return next;
-      });
-    }).catch(() => { });
-    apiFetch<ApiRoom[]>("/rooms").then(setRooms).catch(() => { });
-    apiFetch<ApiMenuItem[]>("/menu-card-items").then(setMenuItems).catch(() => { });
-    apiFetch<string[]>("/orders/active-tables")
-      .then(ids => setOccupiedTableIds(new Set(ids)))
-      .catch(() => { });
+    (async () => {
+      let myEstablishmentId: string | null = null;
+      try {
+        const me = await apiFetch<{ establishmentId: string }>("/users/me");
+        myEstablishmentId = me.establishmentId;
+      } catch { /* continua sense filtre si falla */ }
+
+      apiFetch<ApiTable[]>("/tables").then(tables => {
+        const myTables = myEstablishmentId
+          ? tables.filter(t => t.establishmentId === myEstablishmentId)
+          : tables;
+        setDbTables(myTables);
+        // Sincronitza dbId en taules del mapa que encara no en tenen
+        setData(prev => {
+          let changed = false;
+          const newTables: Record<string, Table[]> = {};
+          for (const [z, ts] of Object.entries(prev.tables)) {
+            newTables[z] = ts.map(t => {
+              if (t.dbId) return t;
+              const found = myTables.find(dt => dt.tableNumber === String(t.number));
+              if (found) { changed = true; return { ...t, dbId: found.id }; }
+              return t;
+            });
+          }
+          if (!changed) return prev;
+          const next = { ...prev, tables: newTables };
+          saveFloorData(next);
+          return next;
+        });
+      }).catch(() => { });
+
+      apiFetch<ApiRoom[]>("/rooms").then(rooms => {
+        const myRooms = myEstablishmentId
+          ? rooms.filter(r => r.establishmentId === myEstablishmentId)
+          : rooms;
+        setRooms(myRooms);
+      }).catch(() => { });
+
+      apiFetch<ApiMenuItem[]>("/menu-card-items").then(setMenuItems).catch(() => { });
+      apiFetch<string[]>("/orders/active-tables")
+        .then(ids => setOccupiedTableIds(new Set(ids)))
+        .catch(() => { });
+      apiFetch<{ code: string; nameEs: string }[]>("/allergens").then(allergens => {
+        setAllergenList(allergens.map(a => ({
+          id: a.code,
+          label: a.nameEs,
+          emoji: ALLERGEN_EMOJI[a.code] ?? "⚠️",
+        })));
+      }).catch(() => { });
+    })();
   }, []);
 
   // ── Reinicia formulari quan canvia el panell ───────────────────────────────
@@ -1169,6 +1192,7 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
                     table={tbl}
                     chair={chair}
                     draft={allergyDraft}
+                    allergens={allergenList}
                     onChange={setAllergyDraft}
                     onToggleTag={tag => setAllergyDraft(d => ({ ...d, tags: d.tags.includes(tag) ? d.tags.filter(t => t !== tag) : [...d.tags, tag] }))}
                     onSave={saveChairAllergy}
@@ -1643,9 +1667,10 @@ function NewOrderForm({ tableNumber, cartItems, menuItems, onAddDish, onRemoveIt
 // PANELL D'AL·LÈRGIA DE CADIRA (edició local del mapa)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AllergyPanel({ table, chair, draft, onChange, onToggleTag, onSave, onRemove, onClose }:
+function AllergyPanel({ table, chair, draft, allergens, onChange, onToggleTag, onSave, onRemove, onClose }:
   {
     table: Table; chair: Chair; draft: { name: string; tags: string[] };
+    allergens: AllergenOption[];
     onChange: (d: { name: string; tags: string[] }) => void;
     onToggleTag: (tag: string) => void; onSave: () => void; onRemove: () => void; onClose: () => void
   }) {
@@ -1689,7 +1714,7 @@ function AllergyPanel({ table, chair, draft, onChange, onToggleTag, onSave, onRe
         Al·lèrgens
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
-        {ALLERGENS.map(a => {
+        {allergens.map(a => {
           const active = draft.tags.includes(a.id);
           return (
             <button key={a.id} onClick={() => onToggleTag(a.id)}
