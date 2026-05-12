@@ -22,6 +22,7 @@ interface Table {
   id: string; x: number; y: number; w: number; h: number;
   shape: "rect" | "round"; number: number | string;
   merged: boolean; chairs: Chair[];
+  dbId?: string;
 }
 interface FloorData {
   tables: Record<string, Table[]>;
@@ -77,6 +78,11 @@ interface ApiTable {
   roomId: string;
   tableNumber: string;
   capacity: number | null;
+  establishmentId: string;
+}
+interface ApiRoom {
+  id: string;
+  name: string;
   establishmentId: string;
 }
 interface CartItem {
@@ -274,12 +280,12 @@ function IconEmpty() {
 // COMPONENT PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function FloorMapSection() {
+export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () => void } = {}) {
 
   // ── Estat del mapa ─────────────────────────────────────────────────────────
   const [data, setData] = useState<FloorData>(loadFloorData);
   const [zone, setZone] = useState<"indoor" | "terrassa">("indoor");
-  const [mode, setMode] = useState<"edit" | "service">("edit");
+  const [mode, setMode] = useState<"edit" | "service">("service");
   const [tool, setTool] = useState<"select" | "addChair">("select");
   const [selId, setSelId] = useState<string | null>(null);
   const [selType, setSelType] = useState<"table" | "chair" | null>(null);
@@ -293,6 +299,7 @@ export default function FloorMapSection() {
 
   // ── Dades de l'API ──────────────────────────────────────────────────────────
   const [dbTables, setDbTables] = useState<ApiTable[]>([]);
+  const [rooms, setRooms] = useState<ApiRoom[]>([]);
   const [menuItems, setMenuItems] = useState<ApiMenuItem[]>([]);
   const [occupiedTableIds, setOccupiedTableIds] = useState<Set<string>>(new Set());
   const [activeOrders, setActiveOrders] = useState<Record<string, ApiOrder>>({});
@@ -315,6 +322,7 @@ export default function FloorMapSection() {
   const selTypeRef = useRef(selType);
   const histRef = useRef(history);
   const canvasOffsetRef = useRef(canvasOffset);
+  const roomsRef = useRef<ApiRoom[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const gridCvs = useRef<HTMLCanvasElement>(null);
@@ -329,15 +337,36 @@ export default function FloorMapSection() {
   useEffect(() => { selTypeRef.current = selType; }, [selType]);
   useEffect(() => { histRef.current = history; }, [history]);
   useEffect(() => { canvasOffsetRef.current = canvasOffset; }, [canvasOffset]);
+  useEffect(() => { roomsRef.current = rooms; }, [rooms]);
 
   // ── Toast ──────────────────────────────────────────────────────────────────
   const showToast = useCallback((msg: string) => {
     setToast(msg); setTimeout(() => setToast(""), 2400);
   }, []);
 
-  // ── Càrrega inicial: taules DB + menú + taules ocupades ────────────────────
+  // ── Càrrega inicial: taules DB + sales + menú + taules ocupades ────────────
   useEffect(() => {
-    apiFetch<ApiTable[]>("/tables").then(setDbTables).catch(() => { });
+    apiFetch<ApiTable[]>("/tables").then(tables => {
+      setDbTables(tables);
+      // Sincronitza dbId en taules del mapa que encara no en tenen
+      setData(prev => {
+        let changed = false;
+        const newTables: Record<string, Table[]> = {};
+        for (const [z, ts] of Object.entries(prev.tables)) {
+          newTables[z] = ts.map(t => {
+            if (t.dbId) return t;
+            const found = tables.find(dt => dt.tableNumber === String(t.number));
+            if (found) { changed = true; return { ...t, dbId: found.id }; }
+            return t;
+          });
+        }
+        if (!changed) return prev;
+        const next = { ...prev, tables: newTables };
+        saveFloorData(next);
+        return next;
+      });
+    }).catch(() => { });
+    apiFetch<ApiRoom[]>("/rooms").then(setRooms).catch(() => { });
     apiFetch<ApiMenuItem[]>("/menu-card-items").then(setMenuItems).catch(() => { });
     apiFetch<string[]>("/orders/active-tables")
       .then(ids => setOccupiedTableIds(new Set(ids)))
@@ -355,7 +384,9 @@ export default function FloorMapSection() {
     if (!panel || panel.type !== "table") return;
     const mapTable = (data.tables[zone] ?? []).find(t => t.id === panel.tableId);
     if (!mapTable) return;
-    const dbTable = dbTables.find(dt => dt.tableNumber === String(mapTable.number));
+    const dbTable = mapTable.dbId
+      ? dbTables.find(dt => dt.id === mapTable.dbId)
+      : dbTables.find(dt => dt.tableNumber === String(mapTable.number));
     if (!dbTable) return;
     setPanelLoading(true);
     apiFetch<ApiOrder | null>(`/orders/active/${dbTable.id}`)
@@ -372,14 +403,15 @@ export default function FloorMapSection() {
       .finally(() => setPanelLoading(false));
   }, [panel, dbTables, data.tables, zone]);
 
-  // ── Mapeig: número de taula del mapa → ID de la DB ────────────────────────
-  const getDbTableId = useCallback((tableNumber: number | string): string | null => {
-    const dbTable = dbTables.find(dt => dt.tableNumber === String(tableNumber));
-    return dbTable?.id ?? null;
+  // ── Mapeig: taula del mapa → registre de la DB (dbId primer, número com a fallback)
+  const getDbTableId = useCallback((t: Table): string | null => {
+    if (t.dbId) return t.dbId;
+    return dbTables.find(dt => dt.tableNumber === String(t.number))?.id ?? null;
   }, [dbTables]);
 
-  const getDbTable = useCallback((tableNumber: number | string): ApiTable | null => {
-    return dbTables.find(dt => dt.tableNumber === String(tableNumber)) ?? null;
+  const getDbTable = useCallback((t: Table): ApiTable | null => {
+    if (t.dbId) return dbTables.find(dt => dt.id === t.dbId) ?? null;
+    return dbTables.find(dt => dt.tableNumber === String(t.number)) ?? null;
   }, [dbTables]);
 
   // ── Quadrícula ─────────────────────────────────────────────────────────────
@@ -549,35 +581,75 @@ export default function FloorMapSection() {
   // ACCIONS D'EDICIÓ
   // ─────────────────────────────────────────────────────────────────────────
 
-  const handleAddTable = useCallback((shape: "rect" | "round") => {
+  const handleAddTable = useCallback(async (shape: "rect" | "round") => {
     if (modeRef.current === "service") return;
     const wrap = wrapRef.current, off = canvasOffsetRef.current;
     const cx = wrap ? doSnap(wrap.clientWidth / 2 - TW / 2 - off.x + (Math.random() * 80 - 40), snapRef.current) : 60;
     const cy = wrap ? doSnap(wrap.clientHeight / 2 - TH / 2 - off.y + (Math.random() * 80 - 40), snapRef.current) : 60;
     const z = zoneRef.current;
+    const num = dataRef.current.nextNum[z] ?? 1;
+
+    // Determina la sala per a la zona actual
+    const allRooms = roomsRef.current;
+    const room = z === "terrassa"
+      ? allRooms.find(r => r.name.toLowerCase().includes("terrass"))
+      : allRooms.find(r => !r.name.toLowerCase().includes("terrass"));
+
+    let dbId: string | undefined;
+    if (room) {
+      try {
+        const dbTable = await apiFetch<ApiTable>("/tables", {
+          method: "POST",
+          body: JSON.stringify({ roomId: room.id, tableNumber: String(num), capacity: null }),
+        });
+        dbId = dbTable.id;
+        setDbTables(prev => [...prev, dbTable]);
+      } catch {
+        showToast("Error creant la taula a la base de dades");
+        return;
+      }
+    }
+
     pushHistory();
     setData(prev => {
-      const num = prev.nextNum[z] ?? 1;
+      const n = prev.nextNum[z] ?? 1;
       const t: Table = {
-        id: uid(), x: cx, y: cy, w: TW, h: TH, shape, number: num, merged: false,
+        id: uid(), x: cx, y: cy, w: TW, h: TH, shape, number: n, merged: false, dbId,
         chairs: shape === "round"
           ? [{ id: uid(), angle: -90 }, { id: uid(), angle: 90 }]
           : [{ id: uid(), side: "top", pos: .5 }, { id: uid(), side: "bottom", pos: .5 }]
       };
-      const next = { ...prev, tables: { ...prev.tables, [z]: [...(prev.tables[z] ?? []), t] }, nextNum: { ...prev.nextNum, [z]: num + 1 } };
+      const next = { ...prev, tables: { ...prev.tables, [z]: [...(prev.tables[z] ?? []), t] }, nextNum: { ...prev.nextNum, [z]: n + 1 } };
       saveFloorData(next); setSelId(t.id); setSelType("table");
       return next;
     });
     showToast("Taula afegida");
   }, [pushHistory, showToast]);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     const id = selIdRef.current, type = selTypeRef.current;
     if (!id) return;
     const z = zoneRef.current;
-    pushHistory();
-    if (type === "table") { updateTables(z, ts => ts.filter(t => t.id !== id)); showToast("Taula eliminada"); }
-    else if (type === "chair") { updateTables(z, ts => ts.map(t => ({ ...t, chairs: t.chairs.filter(c => c.id !== id) }))); showToast("Cadira eliminada"); }
+    if (type === "table") {
+      const table = (dataRef.current.tables[z] ?? []).find(t => t.id === id);
+      const dbId = table?.dbId;
+      if (dbId) {
+        try {
+          await apiFetch(`/tables/${dbId}`, { method: "DELETE" });
+          setDbTables(prev => prev.filter(dt => dt.id !== dbId));
+        } catch {
+          showToast("No es pot eliminar: la taula té comandes associades");
+          return;
+        }
+      }
+      pushHistory();
+      updateTables(z, ts => ts.filter(t => t.id !== id));
+      showToast("Taula eliminada");
+    } else if (type === "chair") {
+      pushHistory();
+      updateTables(z, ts => ts.map(t => ({ ...t, chairs: t.chairs.filter(c => c.id !== id) })));
+      showToast("Cadira eliminada");
+    }
     setSelId(null); setSelType(null);
   }, [pushHistory, updateTables, showToast]);
 
@@ -709,6 +781,7 @@ export default function FloorMapSection() {
       setOccupiedTableIds(prev => { const n = new Set(prev); n.delete(dbTableId); return n; });
       setPanel(null);
       showToast(`Taula ${tableNumber} tancada`);
+      onOrderChange?.();
     } catch {
       showToast("Error tancant la comanda");
     }
@@ -716,7 +789,7 @@ export default function FloorMapSection() {
 
   const confirmNewOrder = useCallback(async (mapTable: Table) => {
     if (cartItems.length === 0) { showToast("Afegeix almenys un plat"); return; }
-    const dbTable = getDbTable(mapTable.number);
+    const dbTable = getDbTable(mapTable);
     if (!dbTable) { showToast("Taula no trobada a la base de dades"); return; }
 
     try {
@@ -743,6 +816,7 @@ export default function FloorMapSection() {
       setCartItems([]);
       setShowNewOrderForm(false);
       showToast("Comanda creada!");
+      onOrderChange?.();
     } catch {
       showToast("Error creant la comanda");
     }
@@ -770,7 +844,7 @@ export default function FloorMapSection() {
   // ─────────────────────────────────────────────────────────────────────────
 
   const occupiedCount = currentTables.filter(t => {
-    const dbId = getDbTableId(t.number);
+    const dbId = getDbTableId(t);
     return dbId ? occupiedTableIds.has(dbId) : false;
   }).length;
   const availableCount = currentTables.length - occupiedCount;
@@ -895,7 +969,7 @@ export default function FloorMapSection() {
             {currentTables.map(table => {
               const isSelected = selId === table.id && selType === "table";
               const isRenaming = renaming === table.id;
-              const dbTableId = mode === "service" ? getDbTableId(table.number) : null;
+              const dbTableId = mode === "service" ? getDbTableId(table) : null;
               const status = mode === "service" ? getTableStatus(dbTableId, occupiedTableIds, activeOrders) : null;
               const handleList = isSelected && mode === "edit" ? (table.shape === "round" ? ROUND_HANDLES : RECT_HANDLES) : [];
 
@@ -1046,7 +1120,7 @@ export default function FloorMapSection() {
               {panel!.type === "table" && (() => {
                 const tbl = currentTables.find(t => t.id === panel!.tableId);
                 if (!tbl) return null;
-                const dbTableId = getDbTableId(tbl.number);
+                const dbTableId = getDbTableId(tbl);
                 const order = dbTableId ? (activeOrders[dbTableId] ?? null) : null;
                 const status = getTableStatus(dbTableId, occupiedTableIds, activeOrders);
 

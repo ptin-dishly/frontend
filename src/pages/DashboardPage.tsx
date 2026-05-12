@@ -1,70 +1,81 @@
-import { useState } from "react";
-import { getCurrentUser } from "../utils/storage";
+import { useState, useEffect } from "react";
+import { getCurrentUser, getAccessToken } from "../utils/storage";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import BigButton from "../components/BigButton";
 import SelectDropdown from "../components/SelectDropdown";
 import OrderCard from "../components/OrderCard";
-import Notification from "../components/Notification";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NOU IMPORT: FloorMapSection
-// Component que mostra el mapa 2D de la sala al Dashboard
-// ─────────────────────────────────────────────────────────────────────────────
 import FloorMapSection from "../components/FloorMapSection";
+
+const API_BASE = import.meta.env.VITE_API_URL as string;
+
+interface DashboardOrder {
+  id: string;
+  tableId: string | null;
+  tableNumber: string | null;
+  status: string;
+  items: { name: string; quantity: number; price: number }[];
+  total: number;
+}
+
+async function fetchOrders(): Promise<DashboardOrder[]> {
+  const token = getAccessToken();
+  const res = await fetch(`${API_BASE}/orders/active`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  const json = await res.json();
+  if (!json.success) return [];
+  return json.data as DashboardOrder[];
+}
 
 export default function DashboardPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
 
-  const [globalSearch, setGlobalSearch] = useState("");
-  const [orderSearch, setOrderSearch] = useState("");
-  const [tableFilter, setTableFilter] = useState("");
-  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const canSeeMap = userRole === "admin" || userRole === "waiter";
 
-  // Llista de 12 comandes d'exemple
-  const orders = [
-    { id: "9932", table: "12", total: 40.50, items: [{ name: "Lasanya", quantity: 2, price: 14.00 }, { name: "Aigua", quantity: 1, price: 2.50 }] },
-    { id: "9933", table: "05", total: 15.20, items: [{ name: "Amanida de Formatge", quantity: 1, price: 12.50 }] },
-    { id: "9934", table: "08", total: 22.10, items: [{ name: "Canelons de Rostit", quantity: 2, price: 14.00 }] },
-    { id: "9935", table: "01", total: 10.00, items: [{ name: "Cafès", quantity: 2, price: 5.00 }] },
-    { id: "9936", table: "03", total: 65.40, items: [{ name: "Entrecot", quantity: 1, price: 22.00 }, { name: "Vi Negre", quantity: 1, price: 18.00 }] },
-    { id: "9937", table: "07", total: 12.40, items: [{ name: "Hamburguesa", quantity: 1, price: 10.50 }] },
-    { id: "9938", table: "09", total: 28.15, items: [{ name: "Risotto de Bolets", quantity: 1, price: 16.00 }] },
-    { id: "9939", table: "11", total: 45.00, items: [{ name: "Paella Marisc", quantity: 2, price: 38.00 }] },
-    { id: "9940", table: "04", total: 18.50, items: [{ name: "Tapes variades", quantity: 3, price: 15.00 }] },
-    { id: "9941", table: "06", total: 9.20, items: [{ name: "Cervesa", quantity: 2, price: 6.00 }] },
-    { id: "9942", table: "14", total: 31.00, items: [{ name: "Pizza Prosciutto", quantity: 2, price: 24.00 }] },
-    { id: "9943", table: "02", total: 52.30, items: [{ name: "Pop a la gallega", quantity: 1, price: 19.50 }] },
-  ];
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [tableFilter, setTableFilter] = useState("");
+  const [orders, setOrders] = useState<DashboardOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  const refresh = () => fetchOrders().then(setOrders).catch(() => {});
+
+  useEffect(() => {
+    setLoadingOrders(true);
+    fetchOrders()
+      .then(setOrders)
+      .catch(() => setOrders([]))
+      .finally(() => setLoadingOrders(false));
+  }, []);
 
   const tableOptions = [
     { label: "Totes les taules", value: "" },
-    ...orders
-      .map((o) => o.table)
-      .filter((t, i, arr) => arr.indexOf(t) === i)
+    ...Array.from(new Set(orders.map((o) => o.tableNumber ?? "—")))
       .sort()
       .map((t) => ({ label: `Taula ${t}`, value: t })),
   ];
 
   const filteredOrders = orders.filter((order) => {
+    const tableNum = order.tableNumber ?? "";
     const matchesGlobal =
       globalSearch === "" ||
       order.id.includes(globalSearch) ||
-      order.table.includes(globalSearch);
-    const matchesOrderSearch =
-      orderSearch === "" || order.id.includes(orderSearch);
-    const matchesTable = tableFilter === "" || order.table === tableFilter;
-    return matchesGlobal && matchesOrderSearch && matchesTable;
+      tableNum.includes(globalSearch);
+    const matchesTable = tableFilter === "" || tableNum === tableFilter;
+    return matchesGlobal && matchesTable;
   });
+
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
 
   return (
     <div style={{ display: "flex", backgroundColor: "var(--color-white)", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
-
-        {/* Contenidor ajustat a 1100px per forçar una vista estètica de 3 columnes */}
         <div style={{ width: "100%", maxWidth: "1100px" }}>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
@@ -76,105 +87,64 @@ export default function DashboardPage() {
                 Role: <span style={{ fontWeight: 600, color: "#0F172A" }}>{user?.role?.toUpperCase()}</span>
               </p>
             </div>
-            <Notification />
           </div>
 
-          {/* ─────────────────────────────────────────────────────────────────
-              NOU: Mapa de Sala
-              S'afegeix aquí, just després del header de benvinguda i
-              abans de les estadístiques i la llista de comandes.
-              El component llegeix el layout de localStorage i mostra
-              les taules en vermell (ocupades) o verd (lliures).
-          ───────────────────────────────────────────────────────────────── */}
-          <FloorMapSection />
+          {canSeeMap && <FloorMapSection onOrderChange={refresh} />}
 
-          <div style={{ marginBottom: 40, display: "flex", justifyContent: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 32, flexWrap: "wrap" }}>
+            <BigButton label="Total comandes" value={filteredOrders.length.toString()} />
+            <BigButton label="Pendents" value={pendingCount.toString()} />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginBottom: 40, flexWrap: "wrap" }}>
             <SearchBar
               value={globalSearch}
               onChange={setGlobalSearch}
               placeholder="Cerca comandes o taules..."
             />
+            <SelectDropdown
+              options={tableOptions}
+              value={tableFilter}
+              onChange={setTableFilter}
+            />
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 50, flexWrap: "wrap" }}>
-            <BigButton label="Total comandes" value={filteredOrders.length.toString()} />
-            <BigButton label="Pendents" value="5" />
-            <BigButton label="Nova comanda" value="+" onClick={() => console.log("New order")} />
-          </div>
+          <h2 style={{ fontFamily: "Fustat", fontSize: 22, color: "var(--color-dark-blue)", margin: "0 0 30px 0" }}>
+            Comandes Actives
+          </h2>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30, flexWrap: "wrap", gap: 20 }}>
-            <h2 style={{ fontFamily: "Fustat", fontSize: 22, color: "var(--color-dark-blue)", margin: 0 }}>
-              Comandes Actives
-            </h2>
-            <div style={{ display: "flex", gap: 16 }}>
-              <SearchBar
-                value={orderSearch}
-                onChange={setOrderSearch}
-                placeholder="Cerca ID..."
-              />
-              <SelectDropdown
-                options={tableOptions}
-                value={tableFilter}
-                onChange={setTableFilter}
-              />
+          {loadingOrders ? (
+            <p style={{ textAlign: "center", color: "#6B7280" }}>Carregant comandes...</p>
+          ) : filteredOrders.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#6B7280" }}>No hi ha comandes actives.</p>
+          ) : (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: "35px",
+              justifyItems: "center",
+              width: "100%"
+            }}>
+              {filteredOrders.map((order) => (
+                <div
+                  key={order.id}
+                  style={{ transition: "transform 0.2s" }}
+                  onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-5px)")}
+                  onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                >
+                  <OrderCard
+                    orderId={order.id.slice(0, 8)}
+                    tableNumber={order.tableNumber ?? "—"}
+                    items={order.items}
+                    total={order.total}
+                  />
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* Graella amb espaiat generós (gap 35px) i 3 columnes per línia */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: "35px",
-            justifyItems: "center",
-            width: "100%"
-          }}>
-            {filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                onClick={() => setActiveOrder(order)}
-                style={{ cursor: "pointer", transition: "transform 0.2s" }}
-                onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-5px)")}
-                onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-              >
-                <OrderCard
-                  orderId={order.id}
-                  tableNumber={order.table}
-                  items={order.items}
-                  total={order.total}
-                />
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </div>
 
-      {activeOrder && (
-        <div style={{ position: "fixed", top: 20, right: 20, zIndex: 1000, animation: "slideIn 0.3s ease-out" }}>
-          <div style={{ position: "relative", filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.2))" }}>
-            <button
-              onClick={() => setActiveOrder(null)}
-              style={{
-                position: "absolute", top: -12, left: -12, background: "var(--color-dark-blue)",
-                color: "white", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer",
-                fontWeight: "bold", zIndex: 1100, fontSize: 16
-              }}
-            >✕</button>
-            <OrderCard
-              orderId={activeOrder.id}
-              tableNumber={activeOrder.table}
-              items={activeOrder.items}
-              total={activeOrder.total}
-            />
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(110%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }
