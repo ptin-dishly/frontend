@@ -112,3 +112,40 @@ npm run dev -- --port 3001
 rm -rf node_modules package-lock.json
 npm install
 ```
+---
+## Internacionalització (Idiomes amb els paquets i18n)
+
+El projecte utilitza `i18next` per gestionar múltiples idiomes. Cal instal·lar les dependències específicament ja que no sempre s'inclouen al `package.json` base:
+```bash
+npm install i18next react-i18next i18next-browser-languagedetector
+```
+---
+## Notes de manteniment
+
+### Eliminació d'imports de React innecessaris
+
+A partir de React 17+, no cal importar React explícitament a cada fitxer. Si el build falla per errors del tipus `'React' is declared but its value is never read`, executa les següents comandes des de l'arrel del projecte per eliminar-los automàticament:
+
+```bash
+sed -i "s/import React, { /import { /g" src/**/*.tsx src/**/*.ts
+sed -i "/^import React from \"react\";$/d" src/**/*.tsx src/**/*.ts
+```
+
+### Instal·lació de socket.io-client
+
+Si el build falla per `Cannot find module 'socket.io-client'`, instal·la el paquet:
+
+```bash
+npm install socket.io-client
+```
+
+### Provar la PWA en local
+
+El service worker i la funcionalitat PWA (instal·lació des del navegador) **no funcionen en mode dev**. Per provar-la cal fer el build i servir-lo localment:
+
+```bash
+npm run build
+npm run preview
+```
+
+El `preview` estarà disponible a `http://localhost:4173`. Si no veus els últims canvis, fes un hard refresh (`Ctrl + Shift + R`) o des de les DevTools (F12) → Application → Service Workers → Unregister, i torna a carregar la pàgina.

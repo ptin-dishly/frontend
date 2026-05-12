@@ -22,12 +22,16 @@ export type ErrorCode =
   | "DB_ERROR";
 
 export class APIError extends Error {
+  code: ErrorCode;
+  statusCode: number;
   constructor(
-    public code: ErrorCode,
-    public statusCode: number,
+    code: ErrorCode,
+    statusCode: number,
     message: string,
   ) {
     super(message);
+    this.code = code;
+    this.statusCode = statusCode;
     this.name = "APIError";
   }
 }
@@ -160,16 +164,16 @@ export interface User {
 
 export const userService = {
   getMe: () => api<User>("/users/me"),
-  getById: (id: string) => api<User>(`/users/:id`, {
+  getById: (id: string) => api<User>(`/users/${id}`, {
     method: "GET",
   }),
   update: (id: string, data: Partial<User>) =>
-    api<User>(`/users/:id`, {
+    api<User>(`/users/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
-    api<void>(`/users/:id`, {
+    api<void>(`/users/${id}`, {
       method: "DELETE",
     }),
 };
