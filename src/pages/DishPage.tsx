@@ -6,6 +6,23 @@ import { recipeService, allergenService, type Recipe, type Allergen } from "../s
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
+import AllergenMultiFilter from "../components/AllergenMultiFilter";
+
+// Import allergen images
+import glutenImg from "../assets/gluten.png";
+import crustaceansImg from "../assets/crustaceans.png";
+import eggImg from "../assets/egg.png";
+import fishImg from "../assets/fish.png";
+import peanutsImg from "../assets/peanuts.png";
+import soybeansImg from "../assets/soybeans.png";
+import milkImg from "../assets/milk.png";
+import treeNutsImg from "../assets/tree-nuts.png";
+import celeryImg from "../assets/celery.png";
+import mustardImg from "../assets/mustard.png";
+import sesameImg from "../assets/sesame.png";
+import sulphitesImg from "../assets/sulphites.png";
+import lupinsImg from "../assets/lupins.png";
+import molluscsImg from "../assets/molluscs.png";
 
 export default function DishPage() {
   const user = getCurrentUser();
@@ -18,6 +35,24 @@ export default function DishPage() {
     return null;
   }
 
+  // Map allergen codes to imported images
+  const allergenImageMap: Record<string, string> = {
+    "GLU": glutenImg,
+    "CRU": crustaceansImg,
+    "HUE": eggImg,
+    "PES": fishImg,
+    "CAC": peanutsImg,
+    "SOJ": soybeansImg,
+    "LAC": milkImg,
+    "FRU": treeNutsImg,
+    "API": celeryImg,
+    "MOS": mustardImg,
+    "SES": sesameImg,
+    "SUL": sulphitesImg,
+    "ALT": lupinsImg,
+    "MOL": molluscsImg,
+  };
+
   const [dishes, setDishes] = useState<Recipe[]>([]);
   const [globalSearch, setGlobalSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -27,8 +62,9 @@ export default function DishPage() {
   const [editingData, setEditingData] = useState<Partial<Recipe> | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [allergens, setAllergens] = useState<Allergen[]>([]);
-  const [excludedAllergenId, setExcludedAllergenId] = useState<string | null>(null);
-  const [recipesWithAllergen, setRecipesWithAllergen] = useState<string[]>([]);
+  const [excludedAllergenIds, setExcludedAllergenIds] = useState<string[]>([]);
+  const [recipesWithAllergens, setRecipesWithAllergens] = useState<Record<string, string[]>>({});
+  const [dishAllergens, setDishAllergens] = useState<Record<string, Allergen[]>>({});
 
   useEffect(() => {
     const fetchDishes = async () => {
@@ -59,18 +95,64 @@ export default function DishPage() {
     fetchAllergens();
   }, []);
 
+  // Fetch allergens for each dish
   useEffect(() => {
-    const fetchRecipesWithAllergen = async () => {
-      if (!excludedAllergenId) { setRecipesWithAllergen([]); return; }
+    const fetchDishAllergens = async () => {
+      if (dishes.length === 0) return;
+
       try {
-        const res = await recipeService.getByAllergen(excludedAllergenId);
-        if (res.success && res.data) setRecipesWithAllergen(res.data.map((recipe) => recipe.id));
+        const results: Record<string, Allergen[]> = {};
+
+        await Promise.all(
+          dishes.map(async (dish) => {
+            try {
+              const res = await allergenService.getByRecipe(dish.id);
+              if (res.success && res.data) {
+                results[dish.id] = res.data;
+              }
+            } catch (err) {
+              console.error(`Error fetching allergens for dish ${dish.id}:`, err);
+            }
+          })
+        );
+
+        setDishAllergens(results);
       } catch (err) {
-        console.error("Error fetching recipes with allergen:", err);
+        console.error("Error fetching allergens for dishes:", err);
       }
     };
-    fetchRecipesWithAllergen();
-  }, [excludedAllergenId]);
+
+    fetchDishAllergens();
+  }, [dishes]);
+
+  // Fetch recipes for each selected allergen (for filtering)
+  useEffect(() => {
+    const fetchRecipesForAllergens = async () => {
+      if (excludedAllergenIds.length === 0) {
+        setRecipesWithAllergens({});
+        return;
+      }
+
+      try {
+        const results: Record<string, string[]> = {};
+
+        await Promise.all(
+          excludedAllergenIds.map(async (allergenId) => {
+            const res = await recipeService.getByAllergen(allergenId);
+            if (res.success && res.data) {
+              results[allergenId] = res.data.map((recipe) => recipe.id);
+            }
+          })
+        );
+
+        setRecipesWithAllergens(results);
+      } catch (err) {
+        console.error("Error fetching recipes with allergens:", err);
+      }
+    };
+
+    fetchRecipesForAllergens();
+  }, [excludedAllergenIds]);
 
   const categories = [
     { label: t("common.all"), value: "" },
@@ -80,7 +162,13 @@ export default function DishPage() {
   const filteredDishes = dishes.filter((dish) => {
     const matchesSearch = dish.name.toLowerCase().includes(globalSearch.toLowerCase());
     const matchesCategory = !categoryFilter || dish.category === categoryFilter;
-    const matchesAllergen = excludedAllergenId === null || !recipesWithAllergen.includes(dish.id);
+
+    // Check if recipe has ANY of the excluded allergens (OR logic)
+    const hasExcludedAllergen = excludedAllergenIds.some((allergenId) =>
+      recipesWithAllergens[allergenId]?.includes(dish.id)
+    );
+    const matchesAllergen = !hasExcludedAllergen;
+
     return matchesSearch && matchesCategory && matchesAllergen;
   });
 
@@ -97,9 +185,9 @@ export default function DishPage() {
         name: editingData.name,
         description: editingData.description,
         category: editingData.category,
-        preparation_time: editingData.preparation_time,
+        preparationTime: editingData.preparationTime,
         servings: editingData.servings,
-        portion_size_kg: editingData.portion_size_kg,
+        portionSizeKg: editingData.portionSizeKg,
       });
       if (res.success && res.data) {
         setDishes((prev) => prev.map((d) => (d.id === dishId ? res.data! : d)));
@@ -143,7 +231,7 @@ export default function DishPage() {
       <main style={{ flex: 1, padding: "40px 48px" }}>
         <div style={{ marginBottom: 30 }}>
           <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0, fontWeight: 700 }}>
-            Dishes
+            {t("dishes.title")}
           </h1>
         </div>
 
@@ -168,37 +256,48 @@ export default function DishPage() {
           </button>
         </div>
 
-        <div style={{ marginBottom: 24, padding: "12px 16px", backgroundColor: "#FFFFFF", borderRadius: "8px", border: "1px solid #E5E7EB" }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
-              {t("dishes.excludeAllergen")}
+        {/* Multi-Allergen Filter */}
+        <div style={{ marginBottom: 24, padding: "16px", backgroundColor: "#FFFFFF", borderRadius: "8px", border: "1px solid #E5E7EB" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>
+              {t("dishes.excludeAllergens")}
             </label>
-            <select
-              value={excludedAllergenId || ""}
-              onChange={(e) => setExcludedAllergenId(e.target.value || null)}
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 12, cursor: "pointer" }}
-            >
-              <option value="">{t("common.none")}</option>
-              {allergens.map((allergen) => (
-                <option key={allergen.id} value={allergen.id}>{allergen.nameEs}</option>
-              ))}
-            </select>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <div style={{ flex: 1, minWidth: 250 }}>
+                <AllergenMultiFilter
+                  allergens={allergens}
+                  selectedAllergenIds={excludedAllergenIds}
+                  onChange={setExcludedAllergenIds}
+                  placeholder="allergens.selectToExclude"
+                />
+              </div>
 
-            {excludedAllergenId && (
-              <button
-                onClick={() => setExcludedAllergenId(null)}
-                style={{ padding: "6px 10px", backgroundColor: "#EF4444", color: "#FFFFFF", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-              >
-                {t("common.clear")}
-              </button>
-            )}
+              {excludedAllergenIds.length > 0 && (
+                <button
+                  onClick={() => setExcludedAllergenIds([])}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: "#EF4444",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    marginTop: 0,
+                  }}
+                >
+                  {t("common.clearAll")}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
           {t("dishes.showing", { filtered: filteredDishes.length, total: dishes.length })}
-          {excludedAllergenId && allergens.find(a => a.id === excludedAllergenId) &&
-            ` (excluding ${allergens.find(a => a.id === excludedAllergenId)?.nameEs})`
+          {excludedAllergenIds.length > 0 &&
+            ` (excluding ${excludedAllergenIds.map((id) => allergens.find((a) => a.id === id)?.nameEs).join(", ")})`
           }
         </div>
 
@@ -232,7 +331,7 @@ export default function DishPage() {
                     <>
                       <input type="text" value={editingData.name || ""} onChange={(e) => setEditingData({ ...editingData, name: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
                       <input type="text" value={editingData.category || ""} onChange={(e) => setEditingData({ ...editingData, category: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
-                      <input type="number" value={editingData.preparation_time || ""} onChange={(e) => setEditingData({ ...editingData, preparation_time: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                      <input type="number" value={editingData.preparationTime || ""} onChange={(e) => setEditingData({ ...editingData, preparationTime: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
                       <input type="number" value={editingData.servings || ""} onChange={(e) => setEditingData({ ...editingData, servings: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
                       <div style={{ display: "flex", gap: 8 }}>
                         <button onClick={() => handleSave(dish.id)} disabled={savingId === dish.id} style={{ padding: "6px 12px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 6, cursor: savingId === dish.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600 }}>
@@ -247,10 +346,23 @@ export default function DishPage() {
                     <>
                       <div>
                         <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>{dish.name}</p>
-                        <p style={{ margin: "4px 0 0", color: "#6B7280", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dish.description}</p>
+                        {/* Show allergen icons */}
+                        {dishAllergens[dish.id] && dishAllergens[dish.id].length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                            {dishAllergens[dish.id].map((allergen) => (
+                              <img
+                                key={allergen.id}
+                                src={allergenImageMap[allergen.code]}
+                                alt={allergen.nameEs}
+                                title={allergen.nameEs}
+                                style={{ width: 16, height: 16, objectFit: "contain" }}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.category}</div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.preparation_time} min</div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.preparationTime} min</div>
                       <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.servings}</div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button onClick={() => handleEdit(dish)} style={{ backgroundColor: "transparent", border: "none", color: "#7C3AED", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>

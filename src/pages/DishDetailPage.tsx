@@ -26,23 +26,51 @@ export default function DishDetailPage() {
   const [editedDish, setEditedDish] = useState<Partial<Recipe> | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Fetch recipe ingredients and group them
+  const fetchDishIngredients = async (recipeId: string) => {
+    try {
+      const res = await recipeService.getIngredients(recipeId);
+      if (res.success && res.data) {
+        // Agrupar ingredientes por nombre y sumar cantidades
+        const groupedIngredients = res.data.reduce(
+          (acc, ingredient) => {
+            const existing = acc.find((item) => item.name === ingredient.name);
+            if (existing) {
+              existing.quantity += ingredient.quantity;
+            } else {
+              acc.push({ ...ingredient });
+            }
+            return acc;
+          },
+          [] as RecipeIngredientDetail[]
+        );
+        setIngredients(groupedIngredients);
+      }
+    } catch (err) {
+      console.error("Error fetching recipe ingredients:", err);
+    }
+  };
+
   useEffect(() => {
     const fetchDishDetails = async () => {
       if (!id) return;
+
       setLoading(true);
       setError(null);
+
       try {
         const recipeRes = await recipeService.getById(id);
         if (!recipeRes.success || !recipeRes.data) {
-          setError(t("dishDetail.notFound"));
+          setError("Dish not found");
           setLoading(false);
           return;
         }
+
         setDish(recipeRes.data);
         setEditedDish(recipeRes.data);
 
-        const ingredientsRes = await recipeService.getIngredients(id);
-        if (ingredientsRes.success && ingredientsRes.data) setIngredients(ingredientsRes.data);
+        // Fetch and group ingredients
+        await fetchDishIngredients(id);
 
         setLoading(false);
       } catch (err) {
@@ -57,16 +85,18 @@ export default function DishDetailPage() {
 
   const handleSave = async () => {
     if (!dish || !editedDish || !id) return;
+
     setSaving(true);
     try {
       const res = await recipeService.update(id, {
         name: editedDish.name,
         description: editedDish.description,
         category: editedDish.category,
-        preparation_time: editedDish.preparation_time,
+        preparationTime: editedDish.preparationTime,
         servings: editedDish.servings,
-        portion_size_kg: editedDish.portion_size_kg,
+        portionSizeKg: editedDish.portionSizeKg,
       });
+
       if (res.success && res.data) {
         setDish(res.data);
         setIsEditing(false);
@@ -90,8 +120,8 @@ export default function DishDetailPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
-          <p style={{ fontSize: "16px", color: "#6B7280" }}>Loading...</p>
+        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
+          <p style={{ fontSize: "16px", color: "#6B7280" }}>{t("dishDetail.loading")}</p>
         </main>
       </div>
     );
@@ -101,15 +131,24 @@ export default function DishDetailPage() {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
+        <main style={{ flex: 1, padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontSize: "16px", color: "#DC2626" }}>
-            {error || "Dish not found"}
+            {error || t("dishDetail.notFound")}
           </p>
           <button
             onClick={() => navigate("/dishes")}
-            style={{ marginTop: 20, padding: "10px 20px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}
+            style={{
+              marginTop: 20,
+              padding: "10px 20px",
+              backgroundColor: "#7C3AED",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
           >
-            {t("dishDetail.backToDishes")}
+            {t("common.back")}
           </button>
         </main>
       </div>
@@ -121,11 +160,20 @@ export default function DishDetailPage() {
       <MenuBar role={userRole} />
 
       <main style={{ flex: 1, padding: "40px 48px" }}>
-        <BackButton label={t("dishDetail.backToDishes")} />
+        <BackButton label={t("common.back")} />
 
         <div style={{ marginTop: 24, maxWidth: 900 }}>
           {error && (
-            <div style={{ backgroundColor: "#FEE2E2", color: "#DC2626", padding: "12px 16px", borderRadius: "8px", marginBottom: "24px", fontSize: "14px" }}>
+            <div
+              style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "24px",
+                fontSize: "14px",
+              }}
+            >
               ⚠️ {error}
             </div>
           )}
@@ -136,62 +184,208 @@ export default function DishDetailPage() {
                 <input
                   type="text"
                   value={editedDish?.name || ""}
-                  onChange={(e) => setEditedDish({ ...editedDish, name: e.target.value })}
-                  style={{ fontSize: 28, fontWeight: 700, color: "#0F172A", margin: "0 0 8px", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", width: "100%", fontFamily: "inherit" }}
+                  onChange={(e) =>
+                    setEditedDish({ ...editedDish, name: e.target.value })
+                  }
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: "#0F172A",
+                    margin: "0 0 16px",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #E5E7EB",
+                    width: "100%",
+                    fontFamily: "inherit",
+                  }}
                 />
                 <textarea
                   value={editedDish?.description || ""}
-                  onChange={(e) => setEditedDish({ ...editedDish, description: e.target.value })}
-                  style={{ fontSize: 14, color: "#6B7280", margin: "0 0 16px", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", width: "100%", fontFamily: "inherit", minHeight: 80 }}
+                  onChange={(e) =>
+                    setEditedDish({ ...editedDish, description: e.target.value })
+                  }
+                  style={{
+                    fontSize: 14,
+                    color: "#6B7280",
+                    margin: "0 0 16px",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #E5E7EB",
+                    width: "100%",
+                    fontFamily: "inherit",
+                    minHeight: 80,
+                  }}
                 />
               </>
             ) : (
               <>
-                <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>{dish.name}</h1>
-                <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>{dish.description}</p>
+                <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>
+                  {dish.name}
+                </h1>
+                <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>
+                  {dish.description}
+                </p>
               </>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 16,
+                marginTop: 16,
+              }}
+            >
               <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
-                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>{t("dishDetail.category")}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  {t("dishDetail.category")}
+                </p>
                 {isEditing ? (
-                  <input type="text" value={editedDish?.category || ""} onChange={(e) => setEditedDish({ ...editedDish, category: e.target.value })} style={{ margin: "8px 0 0", padding: "6px 8px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, width: "100%", fontFamily: "inherit" }} />
+                  <input
+                    type="text"
+                    value={editedDish?.category || ""}
+                    onChange={(e) =>
+                      setEditedDish({ ...editedDish, category: e.target.value })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
                 ) : (
-                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>{dish.category}</p>
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                    {dish.category}
+                  </p>
                 )}
               </div>
 
               <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
-                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>{t("dishDetail.prepTime")}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  {t("dishDetail.prepTime")}
+                </p>
                 {isEditing ? (
-                  <input type="number" value={editedDish?.preparation_time || ""} onChange={(e) => setEditedDish({ ...editedDish, preparation_time: Number(e.target.value) })} style={{ margin: "8px 0 0", padding: "6px 8px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, width: "100%", fontFamily: "inherit" }} />
+                  <input
+                    type="number"
+                    value={editedDish?.preparationTime || ""}
+                    onChange={(e) =>
+                      setEditedDish({
+                        ...editedDish,
+                        preparationTime: Number(e.target.value),
+                      })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
                 ) : (
-                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>{dish.preparation_time} min</p>
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                    {dish.preparationTime} min
+                  </p>
                 )}
               </div>
 
               <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
-                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>{t("dishDetail.servings")}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  {t("dishDetail.servings")}
+                </p>
                 {isEditing ? (
-                  <input type="number" value={editedDish?.servings || ""} onChange={(e) => setEditedDish({ ...editedDish, servings: Number(e.target.value) })} style={{ margin: "8px 0 0", padding: "6px 8px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, width: "100%", fontFamily: "inherit" }} />
+                  <input
+                    type="number"
+                    value={editedDish?.servings || ""}
+                    onChange={(e) =>
+                      setEditedDish({
+                        ...editedDish,
+                        servings: Number(e.target.value),
+                      })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
                 ) : (
-                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>{dish.servings}</p>
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                    {dish.servings}
+                  </p>
                 )}
               </div>
 
               <div style={{ backgroundColor: "white", padding: 16, borderRadius: 8 }}>
-                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>{t("dishDetail.portionSize")}</p>
-                <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>{dish.portion_size_kg} kg</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", fontWeight: 600 }}>
+                  {t("dishDetail.portionSize")}
+                </p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editedDish?.portionSizeKg || ""}
+                    onChange={(e) =>
+                      setEditedDish({
+                        ...editedDish,
+                        portionSizeKg: Number(e.target.value),
+                      })
+                    }
+                    style={{
+                      margin: "8px 0 0",
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid #E5E7EB",
+                      fontSize: 13,
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                ) : (
+                  <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
+                    {dish.portionSizeKg} kg
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
           <div style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 16px", fontWeight: 600 }}>{t("dishDetail.ingredients")}</h2>
+            <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 16px", fontWeight: 600 }}>
+              {t("dishDetail.ingredients")}
+            </h2>
 
-            <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden", backgroundColor: "white" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, padding: "12px 16px", backgroundColor: "#F3F4F6", fontWeight: 600, fontSize: 12, color: "#6B7280", borderBottom: "1px solid #E5E7EB" }}>
+            <div
+              style={{
+                border: "1px solid #E5E7EB",
+                borderRadius: 8,
+                overflow: "hidden",
+                backgroundColor: "white",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1fr 1fr",
+                  gap: 16,
+                  padding: "12px 16px",
+                  backgroundColor: "#F3F4F6",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "#6B7280",
+                  borderBottom: "1px solid #E5E7EB",
+                }}
+              >
                 <div>{t("common.name")}</div>
                 <div>{t("dishDetail.quantity")}</div>
                 <div>{t("dishDetail.optional")}</div>
@@ -205,14 +399,37 @@ export default function DishDetailPage() {
                 ingredients.map((ingredient, index) => (
                   <div
                     key={ingredient.id}
-                    style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, padding: "12px 16px", borderBottom: index < ingredients.length - 1 ? "1px solid #E5E7EB" : "none", backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB", alignItems: "center" }}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "2fr 1fr 1fr",
+                      gap: 16,
+                      padding: "12px 16px",
+                      borderBottom:
+                        index < ingredients.length - 1 ? "1px solid #E5E7EB" : "none",
+                      alignItems: "center",
+                      backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                    }}
                   >
                     <div>
-                      <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>{ingredient.name}</p>
+                      <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>
+                        {ingredient.name}
+                      </p>
                     </div>
-                    <div style={{ fontSize: 13, color: "#0F172A" }}>{ingredient.quantity} {ingredient.unit}</div>
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>
+                      {ingredient.quantity} {ingredient.unit}
+                    </div>
                     <div>
-                      <span style={{ display: "inline-block", backgroundColor: ingredient.isOptional ? "#E0E7FF" : "#F3F4F6", color: ingredient.isOptional ? "#4C1D95" : "#6B7280", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500 }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          backgroundColor: ingredient.isOptional ? "#E0E7FF" : "#F3F4F6",
+                          color: ingredient.isOptional ? "#4C1D95" : "#6B7280",
+                          padding: "4px 12px",
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
                         {ingredient.isOptional ? t("dishDetail.optional") : t("dishDetail.required")}
                       </span>
                     </div>
@@ -223,19 +440,67 @@ export default function DishDetailPage() {
           </div>
 
           <div style={{ display: "flex", gap: 12 }}>
-            <button onClick={() => navigate("/dishes")} style={{ padding: "10px 20px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
-              {t("dishDetail.back")}
+            <button
+              onClick={() => navigate("/dishes")}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#E5E7EB",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              {t("common.back")}
             </button>
             {!isEditing ? (
-              <button onClick={() => setIsEditing(true)} style={{ padding: "10px 20px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
+              <button
+                onClick={() => setIsEditing(true)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#7C3AED",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
                 {t("dishDetail.editDish")}
               </button>
             ) : (
               <>
-                <button onClick={handleSave} disabled={saving} style={{ padding: "10px 20px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", fontSize: 14 }}>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#22C55E",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                  }}
+                >
                   {saving ? t("common.saving") : t("common.save")}
                 </button>
-                <button onClick={handleCancel} style={{ padding: "10px 20px", backgroundColor: "#EF4444", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
+                <button
+                  onClick={handleCancel}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#EF4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
                   {t("common.cancel")}
                 </button>
               </>

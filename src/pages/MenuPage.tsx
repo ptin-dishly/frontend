@@ -1,11 +1,27 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { menuService, recipeService, allergenService, type Menu, type MenuItem, type Allergen } from "../services/api";
+import { menuService, allergenService, userService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
-import sampleImage from "../assets/imagen.png";
+import AllergenMultiFilter from "../components/AllergenMultiFilter";
+
+// Import allergen images
+import glutenImg from "../assets/gluten.png";
+import crustaceansImg from "../assets/crustaceans.png";
+import eggImg from "../assets/egg.png";
+import fishImg from "../assets/fish.png";
+import peanutsImg from "../assets/peanuts.png";
+import soybeansImg from "../assets/soybeans.png";
+import milkImg from "../assets/milk.png";
+import treeNutsImg from "../assets/tree-nuts.png";
+import celeryImg from "../assets/celery.png";
+import mustardImg from "../assets/mustard.png";
+import sesameImg from "../assets/sesame.png";
+import sulphitesImg from "../assets/sulphites.png";
+import lupinsImg from "../assets/lupins.png";
+import molluscsImg from "../assets/molluscs.png";
 
 export default function MenusPage() {
   const user = getCurrentUser();
@@ -18,8 +34,29 @@ export default function MenusPage() {
     return null;
   }
 
+  // Map allergen codes to imported images
+  const allergenImageMap: Record<string, string> = {
+    "GLU": glutenImg,
+    "CRU": crustaceansImg,
+    "HUE": eggImg,
+    "PES": fishImg,
+    "CAC": peanutsImg,
+    "SOJ": soybeansImg,
+    "LAC": milkImg,
+    "FRU": treeNutsImg,
+    "API": celeryImg,
+    "MOS": mustardImg,
+    "SES": sesameImg,
+    "SUL": sulphitesImg,
+    "ALT": lupinsImg,
+    "MOL": molluscsImg,
+  };
+
+  // View states
   const [view, setView] = useState<"list" | "detail">("list");
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
+
+  // List view states
   const [menus, setMenus] = useState<Menu[]>([]);
   const [menuSearch, setMenuSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -27,40 +64,67 @@ export default function MenusPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [newMenuName, setNewMenuName] = useState("");
   const [creatingLoading, setCreatingLoading] = useState(false);
-  const [menuFilterAllergen, setMenuFilterAllergen] = useState<string | null>(null);
   const [allergens, setAllergens] = useState<Allergen[]>([]);
-  const [menusWithAllergen, setMenusWithAllergen] = useState<string[]>([]);
+  const [excludedAllergenIds, setExcludedAllergenIds] = useState<string[]>([]);
+  const [menusWithAllergens, setMenusWithAllergens] = useState<Record<string, Allergen[]>>({});
+
+  // Detail view states
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [recipesWithAllergen, setRecipesWithAllergen] = useState<string[]>([]);
-  const [detailAllergenFilter, setDetailAllergenFilter] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [isEditingMenu, setIsEditingMenu] = useState(false);
   const [editedMenuName, setEditedMenuName] = useState("");
   const [editingMenuPublic, setEditingMenuPublic] = useState(false);
   const [savingMenu, setSavingMenu] = useState(false);
 
+  // Fetch allergens on mount
   useEffect(() => {
     const fetchAllergens = async () => {
       try {
         const res = await allergenService.getAll();
-        if (res.success && res.data) setAllergens(res.data);
+        if (res.success && res.data) {
+          setAllergens(res.data);
+        }
       } catch (err) {
         console.error("Error fetching allergens:", err);
       }
     };
+
     fetchAllergens();
   }, []);
 
+  // Fetch menus by establishment
   useEffect(() => {
-    if (view === "list") fetchMenus();
+    if (view === "list") {
+      fetchMenus();
+    }
   }, [view]);
 
   const fetchMenus = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await menuService.getAll();
-      if (res.success && res.data) setMenus(res.data);
+      const userRes = await userService.getMe();
+      if (!userRes.success || !userRes.data) {
+        setError("Failed to get user information");
+        setLoading(false);
+        return;
+      }
+
+      const currentUser = userRes.data;
+      const establishmentId = currentUser.establishmentId;
+
+      if (!establishmentId) {
+        setError("User has no establishment assigned");
+        setLoading(false);
+        return;
+      }
+
+      const res = await menuService.getByEstablishment(establishmentId);
+      if (res.success && res.data) {
+        setMenus(res.data);
+      } else {
+        setError("Failed to load menus");
+      }
     } catch (err) {
       console.error("Error fetching menus:", err);
       setError("Failed to load menus");
@@ -69,25 +133,45 @@ export default function MenusPage() {
     }
   };
 
+  // Fetch allergens for each menu
   useEffect(() => {
-    const fetchMenusWithAllergen = async () => {
-      if (!menuFilterAllergen) { setMenusWithAllergen([]); return; }
+    const fetchAllergensForMenus = async () => {
+      if (menus.length === 0) return;
+
       try {
-        const res = await menuService.getByAllergen(menuFilterAllergen);
-        if (res.success && res.data) setMenusWithAllergen(res.data.map((menu) => menu.id));
+        const results: Record<string, Allergen[]> = {};
+
+        await Promise.all(
+          menus.map(async (menu) => {
+            try {
+              const res = await allergenService.getByMenu(menu.id);
+              if (res.success && res.data) {
+                results[menu.id] = res.data;
+              }
+            } catch (err) {
+              console.error(`Error fetching allergens for menu ${menu.id}:`, err);
+            }
+          })
+        );
+
+        setMenusWithAllergens(results);
       } catch (err) {
-        console.error("Error fetching menus with allergen:", err);
+        console.error("Error fetching allergens for menus:", err);
       }
     };
-    fetchMenusWithAllergen();
-  }, [menuFilterAllergen]);
 
+    fetchAllergensForMenus();
+  }, [menus]);
+
+  // Fetch menu items
   const fetchMenuItems = async (menuId: string) => {
     setDetailLoading(true);
     try {
       const res = await menuService.getItems();
       if (res.success && res.data) {
-        setMenuItems(res.data.filter((item) => item.menuCardId === menuId));
+        // Filtrar items por menu id
+        const filtered = res.data.filter((item) => item.menuCardId === menuId);
+        setMenuItems(filtered);
       }
     } catch (err) {
       console.error("Error fetching menu items:", err);
@@ -96,25 +180,26 @@ export default function MenusPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchRecipesWithAllergen = async () => {
-      if (!detailAllergenFilter) { setRecipesWithAllergen([]); return; }
-      try {
-        const res = await recipeService.getByAllergen(detailAllergenFilter);
-        if (res.success && res.data) setRecipesWithAllergen(res.data.map((recipe) => recipe.id));
-      } catch (err) {
-        console.error("Error fetching recipes with allergen:", err);
-      }
-    };
-    fetchRecipesWithAllergen();
-  }, [detailAllergenFilter]);
-
   const handleCreateMenu = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMenuName.trim()) return;
+
     setCreatingLoading(true);
     try {
-      const res = await menuService.create({ name: newMenuName, isPublic: false, establishmentId: "", qrCodeUrl: null });
+      const userRes = await userService.getMe();
+      if (!userRes.success || !userRes.data) {
+        setError("Failed to get user information");
+        setCreatingLoading(false);
+        return;
+      }
+
+      const res = await menuService.create({
+        name: newMenuName,
+        isPublic: false,
+        establishmentId: userRes.data.establishmentId,
+        qrCodeUrl: null,
+      });
+
       if (res.success && res.data) {
         setMenus([...menus, res.data]);
         setNewMenuName("");
@@ -132,6 +217,7 @@ export default function MenusPage() {
 
   const handleDeleteMenu = async (id: string) => {
     if (!confirm(t("menus.deleteConfirm"))) return;
+
     try {
       const res = await menuService.delete(id);
       if (res.success) {
@@ -147,9 +233,14 @@ export default function MenusPage() {
 
   const handleSaveMenu = async () => {
     if (!selectedMenu) return;
+
     setSavingMenu(true);
     try {
-      const res = await menuService.update(selectedMenu.id, { name: editedMenuName, isPublic: editingMenuPublic });
+      const res = await menuService.update(selectedMenu.id, {
+        name: editedMenuName,
+        isPublic: editingMenuPublic,
+      });
+
       if (res.success && res.data) {
         setSelectedMenu(res.data);
         setMenus(menus.map((m) => (m.id === selectedMenu.id ? res.data! : m)));
@@ -169,20 +260,24 @@ export default function MenusPage() {
     setSelectedMenu(menu);
     setEditedMenuName(menu.name);
     setEditingMenuPublic(menu.isPublic);
-    setDetailAllergenFilter(null);
-    setRecipesWithAllergen([]);
     fetchMenuItems(menu.id);
     setView("detail");
   };
 
+  // Filter menus - check if menu has ANY of the excluded allergens (OR logic)
   const filteredMenus = menus.filter((menu) => {
     const matchesSearch = menu.name.toLowerCase().includes(menuSearch.toLowerCase());
-    const matchesAllergen = !menuFilterAllergen || !menusWithAllergen.includes(menu.id);
-    return matchesSearch && matchesAllergen;
-  });
 
-  const filteredMenuItems = menuItems.filter((item) => {
-    return !detailAllergenFilter || !recipesWithAllergen.includes(item.recipeId);
+    // Get allergens of this menu
+    const menuAllergenIds = (menusWithAllergens[menu.id] || []).map((a) => a.id);
+
+    // Check if this menu has ANY of the excluded allergens
+    const hasExcludedAllergen = excludedAllergenIds.some((allergenId) =>
+      menuAllergenIds.includes(allergenId)
+    );
+    const matchesAllergen = !hasExcludedAllergen;
+
+    return matchesSearch && matchesAllergen;
   });
 
   if (view === "list") {
@@ -192,69 +287,120 @@ export default function MenusPage() {
 
         <main style={{ flex: 1, padding: "40px 48px" }}>
           <div style={{ marginBottom: 30 }}>
-            <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0, fontWeight: 700 }}>
-              Menus
+            <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>
+              {t("menus.title")}
             </h1>
           </div>
 
           {error && (
-            <div style={{ backgroundColor: "#FEE2E2", color: "#DC2626", padding: "12px 16px", borderRadius: "8px", marginBottom: "24px", fontSize: "14px" }}>
+            <div
+              style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "24px",
+                fontSize: "14px",
+              }}
+            >
               ⚠️ {error}
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, gap: 16, flexWrap: "wrap" }}>
+          {/* Filters Row - Search, Allergen Filter, and New Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 32,
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
             <div style={{ maxWidth: 300, width: "100%" }}>
-              <SearchBar value={menuSearch} onChange={setMenuSearch} placeholder={t("menus.searchPlaceholder")} />
+              <SearchBar
+                value={menuSearch}
+                onChange={setMenuSearch}
+                placeholder={t("menus.searchPlaceholder")}
+              />
             </div>
 
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "#6B7280", display: "block", marginBottom: 8 }}>
-                {t("menus.filterByAllergen")}
-              </label>
-              <select
-                value={menuFilterAllergen || ""}
-                onChange={(e) => setMenuFilterAllergen(e.target.value || null)}
-                style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 12, cursor: "pointer" }}
-              >
-                <option value="">{t("common.none")}</option>
-                {allergens.map((allergen) => (
-                  <option key={allergen.id} value={allergen.id}>{allergen.nameEs}</option>
-                ))}
-              </select>
+            <div style={{ maxWidth: 400, width: "100%" }}>
+              <AllergenMultiFilter
+                allergens={allergens}
+                selectedAllergenIds={excludedAllergenIds}
+                onChange={setExcludedAllergenIds}
+              />
             </div>
 
             <button
               onClick={() => setIsCreating(!isCreating)}
-              style={{ backgroundColor: "var(--color-green)", color: "white", border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+              style={{
+                backgroundColor: "var(--color-green)",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
             >
               {isCreating ? t("common.cancel") : t("menus.newMenu")}
             </button>
           </div>
 
           {isCreating && (
-            <form onSubmit={handleCreateMenu} style={{ backgroundColor: "white", padding: 20, borderRadius: 8, marginBottom: 24, border: "1px solid #E5E7EB", display: "flex", gap: 12 }}>
+            <form
+              onSubmit={handleCreateMenu}
+              style={{
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 8,
+                marginBottom: 24,
+                border: "1px solid #E5E7EB",
+                display: "flex",
+                gap: 12,
+              }}
+            >
               <input
                 type="text"
                 value={newMenuName}
                 onChange={(e) => setNewMenuName(e.target.value)}
-                placeholder={t("menus.menuName")}
-                style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 14, fontFamily: "inherit" }}
+                placeholder={t("menus.namePlaceholder")}
+                style={{
+                  flex: 1,
+                  padding: "10px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #E5E7EB",
+                  fontSize: 14,
+                  fontFamily: "inherit",
+                }}
               />
               <button
                 type="submit"
                 disabled={creatingLoading}
-                style={{ padding: "10px 20px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 6, fontWeight: 600, cursor: creatingLoading ? "not-allowed" : "pointer" }}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#22C55E",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: creatingLoading ? "not-allowed" : "pointer",
+                }}
               >
-                {creatingLoading ? t("menus.creating") : t("menus.create")}
+                {creatingLoading ? t("common.creating") : t("common.create")}
               </button>
             </form>
           )}
 
           <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
             {t("menus.showing", { filtered: filteredMenus.length, total: menus.length })}
-            {menuFilterAllergen && allergens.find(a => a.id === menuFilterAllergen) &&
-              ` (excluding ${allergens.find(a => a.id === menuFilterAllergen)?.nameEs})`
+            {excludedAllergenIds.length > 0 &&
+              ` (${t("menus.excluding")} ${excludedAllergenIds.map((id) => allergens.find((a) => a.id === id)?.nameEs).join(", ")})`
             }
           </div>
 
@@ -263,7 +409,13 @@ export default function MenusPage() {
               <p>{t("menus.loading")}</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                gap: 24,
+              }}
+            >
               {filteredMenus.length === 0 ? (
                 <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
                   {t("menus.notFound")}
@@ -273,25 +425,87 @@ export default function MenusPage() {
                   <div
                     key={menu.id}
                     onClick={() => openMenuDetail(menu)}
-                    style={{ backgroundColor: "white", borderRadius: 12, padding: 20, border: "1px solid #E5E7EB", cursor: "pointer", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(0)"; }}
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: 12,
+                      border: "2px solid #7C3AED",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      padding: 16,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <h3 style={{ margin: 0, fontSize: 18, color: "#0F172A", fontWeight: 600 }}>{menu.name}</h3>
-                      <span style={{ backgroundColor: menu.isPublic ? "#D1FAE5" : "#FEE2E2", color: menu.isPublic ? "#065F46" : "#991B1B", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#0F172A" }}>
+                        {menu.name}
+                      </h3>
+                      <span
+                        style={{
+                          backgroundColor: menu.isPublic ? "#D1FAE5" : "#FEE2E2",
+                          color: menu.isPublic ? "#065F46" : "#991B1B",
+                          padding: "4px 12px",
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 600,
+                        }}
+                      >
                         {menu.isPublic ? t("menus.public") : t("menus.private")}
                       </span>
                     </div>
 
-                    <p style={{ margin: "8px 0", color: "#6B7280", fontSize: 14 }}>
-                      {t("menus.createdAt", { date: new Date(menu.createdAt).toLocaleDateString() })}
+                    <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>
+                      {t("menus.created")} {new Date(menu.createdAt).toLocaleDateString()}
                     </p>
 
-                    <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                    {/* Show allergens in menu card with icons */}
+                    {menusWithAllergens[menu.id] && menusWithAllergens[menu.id].length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                        {menusWithAllergens[menu.id].map((allergen) => (
+                          <img
+                            key={allergen.id}
+                            src={allergenImageMap[allergen.code]}
+                            alt={allergen.nameEs}
+                            title={allergen.nameEs}
+                            style={{ width: 24, height: 24, objectFit: "contain" }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteMenu(menu.id); }}
-                        style={{ flex: 1, padding: "8px 12px", backgroundColor: "#EF4444", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMenu(menu.id);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "8px 12px",
+                          backgroundColor: "#EF4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 600,
+                        }}
                       >
                         {t("common.delete")}
                       </button>
@@ -306,6 +520,7 @@ export default function MenusPage() {
     );
   }
 
+  // Detail view (mantener igual)
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
       <MenuBar role={userRole} />
@@ -313,120 +528,245 @@ export default function MenusPage() {
       <main style={{ flex: 1, padding: "40px 48px" }}>
         <button
           onClick={() => setView("list")}
-          style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "transparent", border: "none", cursor: "pointer", fontWeight: 600, color: "#0F172A", marginBottom: 20 }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: 600,
+            color: "#0F172A",
+            marginBottom: 20,
+          }}
         >
           <span style={{ fontSize: 20 }}>←</span>
           {t("menus.backToMenus")}
         </button>
 
-        <div style={{ marginBottom: 32 }}>
-          {isEditingMenu ? (
-            <>
-              <input
-                type="text"
-                value={editedMenuName}
-                onChange={(e) => setEditedMenuName(e.target.value)}
-                style={{ fontSize: 28, fontWeight: 700, color: "#0F172A", margin: "0 0 16px", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", width: "100%", maxWidth: 400, fontFamily: "inherit" }}
-              />
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, marginBottom: 12 }}>
-                <input type="checkbox" checked={editingMenuPublic} onChange={(e) => setEditingMenuPublic(e.target.checked)} />
-                {t("menus.public")}
-              </label>
-            </>
-          ) : (
-            <>
-              <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>{selectedMenu?.name}</h1>
-              <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>
-                {selectedMenu?.isPublic ? t("menus.publicIcon") : t("menus.privateIcon")}
-              </p>
-            </>
+        <div style={{ marginTop: 24, maxWidth: 900 }}>
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "24px",
+                fontSize: "14px",
+              }}
+            >
+              ⚠️ {error}
+            </div>
           )}
 
-          <div style={{ display: "flex", gap: 12 }}>
-            {!isEditingMenu ? (
-              <button onClick={() => setIsEditingMenu(true)} style={{ padding: "10px 20px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
-                {t("menus.editMenu")}
-              </button>
+          <div style={{ marginBottom: 32 }}>
+            {isEditingMenu ? (
+              <>
+                <input
+                  type="text"
+                  value={editedMenuName}
+                  onChange={(e) => setEditedMenuName(e.target.value)}
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: "#0F172A",
+                    margin: "0 0 16px",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #E5E7EB",
+                    width: "100%",
+                    fontFamily: "inherit",
+                  }}
+                />
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 14,
+                    marginBottom: 12,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={editingMenuPublic}
+                    onChange={(e) => setEditingMenuPublic(e.target.checked)}
+                  />
+                  {t("menus.public")}
+                </label>
+              </>
             ) : (
               <>
-                <button onClick={handleSaveMenu} disabled={savingMenu} style={{ padding: "10px 20px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: savingMenu ? "not-allowed" : "pointer", fontSize: 14 }}>
-                  {savingMenu ? t("common.saving") : t("common.save")}
-                </button>
-                <button onClick={() => setIsEditingMenu(false)} style={{ padding: "10px 20px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
-                  {t("common.cancel")}
-                </button>
+                <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>
+                  {selectedMenu?.name}
+                </h1>
+                <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>
+                  {selectedMenu?.isPublic ? "🌍 " + t("menus.public") : "🔒 " + t("menus.private")}
+                </p>
               </>
             )}
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-            <h2 style={{ fontSize: 20, color: "#0F172A", margin: 0, fontWeight: 600 }}>{t("menus.menuItems")}</h2>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "#6B7280", display: "block", marginBottom: 8 }}>
-                {t("menus.filterByAllergen")}
-              </label>
-              <select
-                value={detailAllergenFilter || ""}
-                onChange={(e) => setDetailAllergenFilter(e.target.value || null)}
-                style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 12, cursor: "pointer" }}
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                onClick={() => setView("list")}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#E5E7EB",
+                  border: "none",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
               >
-                <option value="">{t("common.none")}</option>
-                {allergens.map((allergen) => (
-                  <option key={allergen.id} value={allergen.id}>{allergen.nameEs}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16, fontSize: 14, color: "#6B7280" }}>
-            {t("menus.showingItems", { filtered: filteredMenuItems.length, total: menuItems.length })}
-          </div>
-
-          {detailLoading ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
-              <p>{t("menus.loadingItems")}</p>
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-              {filteredMenuItems.length === 0 ? (
-                <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
-                  {t("menus.noItems")}
-                </p>
+                {t("common.back")}
+              </button>
+              {!isEditingMenu ? (
+                <button
+                  onClick={() => setIsEditingMenu(true)}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#7C3AED",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  {t("menus.editMenu")}
+                </button>
               ) : (
-                filteredMenuItems.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{ backgroundColor: "white", borderRadius: 12, overflow: "hidden", border: "1px solid #E5E7EB", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", transition: "all 0.2s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"; }}
+                <>
+                  <button
+                    onClick={handleSaveMenu}
+                    disabled={savingMenu}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#22C55E",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      cursor: savingMenu ? "not-allowed" : "pointer",
+                      fontSize: 14,
+                    }}
                   >
-                    <div style={{ width: "100%", height: 140, backgroundColor: "#F3F4F6", overflow: "hidden", position: "relative" }}>
-                      <img src={sampleImage} alt={item.recipeName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", top: 8, right: 8, backgroundColor: "rgba(0,0,0,0.6)", color: "white", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-                        €{item.price.toFixed(2)}
-                      </div>
-                    </div>
-
-                    <div style={{ padding: 16 }}>
-                      <h3 style={{ margin: "0 0 8px", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>{item.recipeName}</h3>
-                      <p style={{ margin: "0 0 12px", color: "#667085", fontSize: 12, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {item.recipeDescription}
-                      </p>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>
-                        <span>⏱️ {item.preparationTime} min</span>
-                        <span style={{ backgroundColor: "#F9F5FF", color: "#7F56D9", padding: "4px 10px", borderRadius: 6, fontWeight: 600 }}>{item.category}</span>
-                      </div>
-                      <span style={{ display: "inline-block", backgroundColor: item.isAvailable ? "#D1FAE5" : "#FEE2E2", color: item.isAvailable ? "#065F46" : "#991B1B", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500 }}>
-                        {item.isAvailable ? t("menus.available") : t("menus.unavailable")}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                    {savingMenu ? t("common.saving") : t("common.save")}
+                  </button>
+                  <button
+                    onClick={() => setIsEditingMenu(false)}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#EF4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontSize: 14,
+                    }}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </>
               )}
             </div>
-          )}
+          </div>
+
+          {/* Menu Items Section */}
+          <div>
+            <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 16px", fontWeight: 600 }}>
+              {t("menus.menuItems")}
+            </h2>
+
+            {detailLoading ? (
+              <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
+                <p>{t("menus.loadingItems")}</p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  backgroundColor: "white",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                    gap: 16,
+                    padding: "12px 16px",
+                    backgroundColor: "#F3F4F6",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    color: "#6B7280",
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  <div>{t("menus.dish")}</div>
+                  <div>{t("menus.category")}</div>
+                  <div>{t("menus.price")}</div>
+                  <div>{t("menus.available")}</div>
+                </div>
+
+                {menuItems.length === 0 ? (
+                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#6B7280" }}>
+                    {t("menus.noItemsFound")}
+                  </div>
+                ) : (
+                  menuItems.map((item, index) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                        gap: 16,
+                        padding: "12px 16px",
+                        borderBottom:
+                          index < menuItems.length - 1
+                            ? "1px solid #E5E7EB"
+                            : "none",
+                        alignItems: "center",
+                        backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                      }}
+                    >
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>
+                          {item.recipeName}
+                        </p>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>
+                        {item.category}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>
+                        €{item.price.toFixed(2)}
+                      </div>
+                      <div>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            backgroundColor: item.isAvailable ? "#D1FAE5" : "#FEE2E2",
+                            color: item.isAvailable ? "#065F46" : "#991B1B",
+                            padding: "4px 12px",
+                            borderRadius: 20,
+                            fontSize: 12,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {item.isAvailable ? t("menus.available") : t("menus.unavailable")}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

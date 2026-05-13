@@ -242,5 +242,13 @@
     "total": "Total",
     "view": "View",
     "pay": "Pay"
+  },
+  "allergens": {
+  "selectToExclude": "Select allergens to exclude",
+  "selectedCount": "{{count}} allergen(s) excluded",
+  "selectAll": "Select All",
+  "clearAll": "Clear All",
+  "title": "Allergens",
+  "noAllergens": "No allergens"
   }
 }
