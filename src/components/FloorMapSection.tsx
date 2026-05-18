@@ -382,7 +382,11 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
         setRooms(myRooms);
       }).catch(() => { });
 
-      apiFetch<ApiMenuItem[]>("/menu-card-items").then(setMenuItems).catch(() => { });
+      if (myEstablishmentId) {
+        apiFetch<ApiMenuItem[]>(`/menu-card-items/establishment/${myEstablishmentId}`)
+          .then(setMenuItems)
+          .catch(() => { });
+      }
       apiFetch<string[]>("/orders/active-tables")
         .then(ids => setOccupiedTableIds(new Set(ids)))
         .catch(() => { });
