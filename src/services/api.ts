@@ -220,6 +220,10 @@ export const allergenService = {
   search: (q: string) => api<Allergen[]>(`/allergens/search?q=${encodeURIComponent(q)}`),
   getByIngredient: (ingredientId: string) =>
     api<Allergen[]>(`/allergens/ingredient/${ingredientId}`),
+  getByMenu: (menuId: string) =>
+    api<Allergen[]>(`/allergens/menu/${menuId}`),
+  getByRecipe: (recipeId: string) =>
+    api<Allergen[]>(`/allergens/recipe/${recipeId}`),
   create: (data: Partial<Allergen>) =>
     api<Allergen>("/allergens", {
       method: "POST",
@@ -269,9 +273,9 @@ export interface Recipe {
   name: string;
   description: string | null;
   category: string;
-  portion_size_kg: number;
+  portionSizeKg: number;
   servings: number;
-  preparation_time: number;
+  preparationTime: number;
   version: number;
   created_by: string;
   created_at: string;
@@ -291,6 +295,7 @@ export interface RecipeIngredientDetail {
 
 export const recipeService = {
   getAll: () => api<Recipe[]>("/recipes"),
+  getAllWithAllergens: () => api<any[]>("/recipes/with-allergens"),
   getById: (id: string) => api<Recipe>(`/recipes/${id}`),
   getIngredients: (recipeId: string) =>
     api<RecipeIngredientDetail[]>(`/recipes/${recipeId}/ingredients`),
@@ -347,11 +352,13 @@ export interface MenuItem {
 
 export const menuService = {
   getAll: () => api<Menu[]>("/menus"),
+  getByEstablishment: (establishmentId: string) =>
+    api<Menu[]>(`/menus/establishment/${establishmentId}`),
   getById: (id: string) => api<Menu>(`/menus/${id}`),
-  getItems: () => api<MenuItem[]>("/menu-card-items"),
+  getItems: () => api<MenuItem[]>("/menu-card-items"), // ← Cambiar de /menus/items a /menu-card-items
   getByAllergen: (allergenId: string) =>
     api<Menu[]>(`/menus/allergen/${allergenId}`),
-  create: (data: Omit<Menu, "id" | "createdAt" | "updatedAt">) =>
+  create: (data: Partial<Menu>) =>
     api<Menu>("/menus", {
       method: "POST",
       body: JSON.stringify(data),

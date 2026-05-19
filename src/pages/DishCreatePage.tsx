@@ -44,9 +44,9 @@ export default function RecipeCreatePage() {
         name: formData.name,
         description: formData.description || null,
         category: formData.category,
-        portion_size_kg: formData.portionSizeKg,
+        portionSizeKg: formData.portionSizeKg,
         servings: formData.servings,
-        preparation_time: formData.preparationTime,
+        preparationTime: formData.preparationTime,
       });
 
       if (res.success) {
