@@ -83,7 +83,27 @@
     "noItems": "No s'han trobat articles",
     "available": "Disponible",
     "unavailable": "No disponible",
-    "deleteConfirm": "Estàs segur que vols eliminar aquest menú?"
+    "deleteConfirm": "Estàs segur que vols eliminar aquest menú?",
+    "qrTitle": "QR per a Client",
+    "qrDescription": "Escaneja aquest QR per obrir el menú a la vista de client.",
+    "copyQrLink": "Copiar enllaç",
+    "openClientMenu": "Obrir menú client",
+    "makePublicForQr": "Aquest menú ha de ser públic per compartir-lo amb QR.",
+    "qrCopied": "Enllaç del QR copiat.",
+    "qrCopyFailed": "No s'ha pogut copiar l'enllaç del QR."
+  },
+  "clientMenu": {
+    "title": "Menú Client",
+    "scanPrompt": "Escaneja un codi QR de menú per veure els plats.",
+    "loading": "Carregant menú...",
+    "loadError": "No s'ha pogut carregar aquest menú.",
+    "notFound": "Menú no trobat.",
+    "noPublicMenus": "No hi ha menús públics disponibles ara mateix.",
+    "notPublic": "Aquest menú encara no és públic.",
+    "noItems": "No hi ha plats disponibles en aquest menú.",
+    "public": "Menú públic",
+    "private": "Menú privat",
+    "category": "Categoria:"
   },
   "dishes": {
     "title": "Plats",
@@ -186,6 +206,18 @@
     "markInProgress": "Marcar com a En Procés",
     "markReady": "Marcar com a Llest",
     "markCompleted": "Marcar com a Completat",
+    "kitchenTicket": {
+      "title": "Cuina",
+      "date": "Data:",
+      "order": "Comanda #:",
+      "table": "Taula:",
+      "status": "Estat:",
+      "columnIndex": "#",
+      "columnProduct": "Producte",
+      "columnQty": "Quant.",
+      "totalItems": "Total: {{count}} articles",
+      "printed": "Imprès:"
+    },
     "accessDenied": "Accés denegat. Aquesta pàgina només està disponible per als rols administrador i cuina."
   },
   "tables": {

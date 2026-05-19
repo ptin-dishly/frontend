@@ -5,6 +5,8 @@ import { orderService, type Order } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
+import PrintButton from "../components/printbutton";
+import KitchenTicket from "../components/kitchenTicket.tsx";
 
 export default function OrderPage() {
   const user = getCurrentUser();
@@ -84,6 +86,10 @@ export default function OrderPage() {
     } catch (err) {
       console.error("Error updating order status:", err);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -176,9 +182,12 @@ export default function OrderPage() {
               style={{ backgroundColor: "white", borderRadius: 16, padding: 32, maxWidth: 600, width: "90%", maxHeight: "80vh", overflowY: "auto" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 style={{ margin: "0 0 20px", color: "#0F172A" }}>
-                {t("orders.orderTitle", { number: selectedOrder.orderNumber })}
-              </h2>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
+                <h2 style={{ margin: 0, color: "#0F172A" }}>
+                  {t("orders.orderTitle", { number: selectedOrder.orderNumber })}
+                </h2>
+                <PrintButton onPrint={handlePrint} />
+              </div>
 
               <div style={{ marginBottom: 20 }}>
                 <p style={{ color: "#6B7280", fontSize: 14 }}>
@@ -232,6 +241,7 @@ export default function OrderPage() {
                 </button>
               </div>
             </div>
+            <KitchenTicket order={selectedOrder} />
           </div>
         )}
       </main>

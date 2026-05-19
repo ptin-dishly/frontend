@@ -83,7 +83,27 @@
     "noItems": "No se han encontrado artículos",
     "available": "Disponible",
     "unavailable": "No disponible",
-    "deleteConfirm": "¿Estás seguro de que quieres eliminar este menú?"
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este menú?",
+    "qrTitle": "QR para Cliente",
+    "qrDescription": "Escanea este QR para abrir el menú en la vista de cliente.",
+    "copyQrLink": "Copiar enlace",
+    "openClientMenu": "Abrir menú cliente",
+    "makePublicForQr": "Este menú debe ser público para compartirlo por QR.",
+    "qrCopied": "Enlace del QR copiado.",
+    "qrCopyFailed": "No se pudo copiar el enlace del QR."
+  },
+  "clientMenu": {
+    "title": "Menú Cliente",
+    "scanPrompt": "Escanea un código QR de menú para ver los platos.",
+    "loading": "Cargando menú...",
+    "loadError": "No se pudo cargar este menú.",
+    "notFound": "Menú no encontrado.",
+    "noPublicMenus": "No hay menús públicos disponibles en este momento.",
+    "notPublic": "Este menú todavía no es público.",
+    "noItems": "No hay platos disponibles en este menú.",
+    "public": "Menú público",
+    "private": "Menú privado",
+    "category": "Categoría:"
   },
   "dishes": {
     "title": "Platos",
@@ -186,6 +206,18 @@
     "markInProgress": "Marcar como En Proceso",
     "markReady": "Marcar como Listo",
     "markCompleted": "Marcar como Completado",
+    "kitchenTicket": {
+      "title": "Cocina",
+      "date": "Fecha:",
+      "order": "Comanda #:",
+      "table": "Mesa:",
+      "status": "Estado:",
+      "columnIndex": "#",
+      "columnProduct": "Producto",
+      "columnQty": "Cant.",
+      "totalItems": "Total: {{count}} artículos",
+      "printed": "Impreso:"
+    },
     "accessDenied": "Acceso denegado. Esta página solo está disponible para los roles administrador y cocina."
   },
   "tables": {

@@ -83,7 +83,27 @@
     "noItems": "No items found",
     "available": "Available",
     "unavailable": "Unavailable",
-    "deleteConfirm": "Are you sure you want to delete this menu?"
+    "deleteConfirm": "Are you sure you want to delete this menu?",
+    "qrTitle": "Client QR",
+    "qrDescription": "Scan this QR to open the menu in the client view.",
+    "copyQrLink": "Copy Link",
+    "openClientMenu": "Open Client Menu",
+    "makePublicForQr": "This menu must be public to share via QR.",
+    "qrCopied": "QR link copied.",
+    "qrCopyFailed": "Could not copy the QR link."
+  },
+  "clientMenu": {
+    "title": "Client Menu",
+    "scanPrompt": "Scan a menu QR code to view dishes.",
+    "loading": "Loading menu...",
+    "loadError": "Could not load this menu.",
+    "notFound": "Menu not found.",
+    "noPublicMenus": "No public menus available right now.",
+    "notPublic": "This menu is not public yet.",
+    "noItems": "No dishes available in this menu.",
+    "public": "Public menu",
+    "private": "Private menu",
+    "category": "Category:"
   },
   "dishes": {
     "title": "Dishes",
@@ -186,6 +206,18 @@
     "markInProgress": "Mark as In Progress",
     "markReady": "Mark as Ready",
     "markCompleted": "Mark as Completed",
+    "kitchenTicket": {
+      "title": "Kitchen",
+      "date": "Date:",
+      "order": "Order #:",
+      "table": "Table:",
+      "status": "Status:",
+      "columnIndex": "#",
+      "columnProduct": "Product",
+      "columnQty": "Qty",
+      "totalItems": "Total: {{count}} items",
+      "printed": "Printed:"
+    },
     "accessDenied": "Access denied. This page is only available for admin and kitchen roles."
   },
   "tables": {

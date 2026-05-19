@@ -158,6 +158,7 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  establishmentId?: string;
   isActive: boolean;
   createdAt: string;
 }
