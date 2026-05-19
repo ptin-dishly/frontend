@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { recipeService, allergenService, type Recipe, type Allergen } from "../services/api";
+import { recipeService, type Recipe, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
@@ -66,13 +66,48 @@ export default function DishPage() {
   const [recipesWithAllergens, setRecipesWithAllergens] = useState<Record<string, string[]>>({});
   const [dishAllergens, setDishAllergens] = useState<Record<string, Allergen[]>>({});
 
+  // Fetch dishes and allergens - single request
   useEffect(() => {
-    const fetchDishes = async () => {
+    const fetchDishesAndAllergens = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await recipeService.getAll();
-        if (res.success && res.data) setDishes(res.data);
+        // Un solo request para recetas con alérgenos
+        const recipesRes = await recipeService.getAllWithAllergens();
+        if (recipesRes.success && recipesRes.data) {
+          // Extraer las recetas
+          const recipes = recipesRes.data.map((item: any) => ({
+            id: item.id,
+            establishmentId: item.establishmentId,
+            name: item.name,
+            description: item.description,
+            category: item.category,
+            portionSizeKg: item.portionSizeKg,
+            servings: item.servings,
+            preparationTime: item.preparationTime,
+            version: item.version,
+            createdBy: item.createdBy,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          }));
+          setDishes(recipes);
+
+          // Mapear alérgenos por receta Y extraer todos los alérgenos únicos
+          const allergenMap: Record<string, Allergen[]> = {};
+          const allAllergensMap = new Map<string, Allergen>();
+
+          recipesRes.data.forEach((item: any) => {
+            allergenMap[item.id] = item.allergens || [];
+            // Agregar alérgenos únicos
+            item.allergens?.forEach((allergen: Allergen) => {
+              allAllergensMap.set(allergen.id, allergen);
+            });
+          });
+
+          setDishAllergens(allergenMap);
+          // Usar los alérgenos del endpoint
+          setAllergens(Array.from(allAllergensMap.values()).sort((a, b) => a.euNumber - b.euNumber));
+        }
       } catch (err) {
         console.error("Error fetching dishes:", err);
         setError("Failed to load dishes");
@@ -80,50 +115,8 @@ export default function DishPage() {
         setLoading(false);
       }
     };
-    fetchDishes();
+    fetchDishesAndAllergens();
   }, []);
-
-  useEffect(() => {
-    const fetchAllergens = async () => {
-      try {
-        const res = await allergenService.getAll();
-        if (res.success && res.data) setAllergens(res.data);
-      } catch (err) {
-        console.error("Error fetching allergens:", err);
-      }
-    };
-    fetchAllergens();
-  }, []);
-
-  // Fetch allergens for each dish
-  useEffect(() => {
-    const fetchDishAllergens = async () => {
-      if (dishes.length === 0) return;
-
-      try {
-        const results: Record<string, Allergen[]> = {};
-
-        await Promise.all(
-          dishes.map(async (dish) => {
-            try {
-              const res = await allergenService.getByRecipe(dish.id);
-              if (res.success && res.data) {
-                results[dish.id] = res.data;
-              }
-            } catch (err) {
-              console.error(`Error fetching allergens for dish ${dish.id}:`, err);
-            }
-          })
-        );
-
-        setDishAllergens(results);
-      } catch (err) {
-        console.error("Error fetching allergens for dishes:", err);
-      }
-    };
-
-    fetchDishAllergens();
-  }, [dishes]);
 
   // Fetch recipes for each selected allergen (for filtering)
   useEffect(() => {
@@ -258,39 +251,33 @@ export default function DishPage() {
 
         {/* Multi-Allergen Filter */}
         <div style={{ marginBottom: 24, padding: "16px", backgroundColor: "#FFFFFF", borderRadius: "8px", border: "1px solid #E5E7EB" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>
-              {t("dishes.excludeAllergens")}
-            </label>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ flex: 1, minWidth: 250 }}>
-                <AllergenMultiFilter
-                  allergens={allergens}
-                  selectedAllergenIds={excludedAllergenIds}
-                  onChange={setExcludedAllergenIds}
-                  placeholder="allergens.selectToExclude"
-                />
-              </div>
-
-              {excludedAllergenIds.length > 0 && (
-                <button
-                  onClick={() => setExcludedAllergenIds([])}
-                  style={{
-                    padding: "10px 16px",
-                    backgroundColor: "#EF4444",
-                    color: "#FFFFFF",
-                    border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    marginTop: 0,
-                  }}
-                >
-                  {t("common.clearAll")}
-                </button>
-              )}
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 250 }}>
+              <AllergenMultiFilter
+                allergens={allergens}
+                selectedAllergenIds={excludedAllergenIds}
+                onChange={setExcludedAllergenIds}
+              />
             </div>
+
+            {excludedAllergenIds.length > 0 && (
+              <button
+                onClick={() => setExcludedAllergenIds([])}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: "#EF4444",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  marginTop: 20,
+                }}
+              >
+                {t("common.clearAll")}
+              </button>
+            )}
           </div>
         </div>
 
@@ -346,7 +333,7 @@ export default function DishPage() {
                     <>
                       <div>
                         <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>{dish.name}</p>
-                        {/* Show allergen icons */}
+                        {/* Show allergen icons from cached data */}
                         {dishAllergens[dish.id] && dishAllergens[dish.id].length > 0 && (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
                             {dishAllergens[dish.id].map((allergen) => (

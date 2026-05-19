@@ -295,6 +295,7 @@ export interface RecipeIngredientDetail {
 
 export const recipeService = {
   getAll: () => api<Recipe[]>("/recipes"),
+  getAllWithAllergens: () => api<any[]>("/recipes/with-allergens"),
   getById: (id: string) => api<Recipe>(`/recipes/${id}`),
   getIngredients: (recipeId: string) =>
     api<RecipeIngredientDetail[]>(`/recipes/${recipeId}/ingredients`),
