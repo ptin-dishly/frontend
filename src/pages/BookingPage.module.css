@@ -1,0 +1,89 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.card:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.cardTitle {
+  margin: 0;
+  font-size: 18px;
+  color: #0F172A;
+}
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize;
+}
+
+.cardText {
+  margin: 8px 0;
+  color: #6B7280;
+  font-size: 14px;
+}
+.cardNote {
+  margin-top: 8px;
+  color: #7C3AED;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.confirmed {
+  border-color: #22C55E;
+}
+.confirmed .badge { background-color: #22C55E; }
+.pending {
+  border-color: #F59E0B;
+}
+.pending .badge { background-color: #F59E0B; }
+.cancelled {
+  border-color: #EF4444;
+}
+.cancelled .badge { background-color: #EF4444; }
+
+/* Modal overlay and dialog */
+.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.dialog {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 600px;
+  width: 90%;
+}
+.dialog h2 { margin: 0 0 20px 0; color: #0F172A; }
+.dialogRow { margin-bottom: 12px; color: #6B7280; font-size: 14px; }
+.dialogActions { display: flex; flex-direction: column; gap: 10px; }
+.btnConfirm { padding: 12px 16px; background: #22C55E; color: white; border: none; border-radius: 8px; font-weight:600; }
+.btnPending { padding: 12px 16px; background: #F59E0B; color: white; border: none; border-radius: 8px; font-weight:600; }
+.btnCancel { padding: 12px 16px; background: #EF4444; color: white; border: none; border-radius: 8px; font-weight:600; }
+.btnClose { padding: 12px 16px; background: #E5E7EB; border: none; border-radius: 8px; font-weight:600; }

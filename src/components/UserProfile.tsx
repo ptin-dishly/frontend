@@ -1,9 +1,10 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser, clearAllAuth } from "../utils/storage";
 
 export default function UserProfile() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const user = getCurrentUser();
 
   if (!user) {
@@ -16,13 +17,8 @@ export default function UserProfile() {
   };
 
   const getRoleLabel = (role: string): string => {
-    const roleLabels: Record<string, string> = {
-      admin: "Administrador",
-      kitchen: "Cuina",
-      waiter: "Cambrer/a",
-      sales: "Ventes",
-    };
-    return roleLabels[role] || role;
+    const key = `roles.${role}` as const;
+    return t(key, { defaultValue: role });
   };
 
   const getRoleColor = (role: string): string => {
@@ -121,7 +117,7 @@ export default function UserProfile() {
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#DC2626")}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.8)")}
       >
-        Exit
+        {t("logout")}
       </button>
     </div>
   );

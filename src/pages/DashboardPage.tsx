@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser, getAccessToken } from "../utils/storage";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
@@ -34,6 +35,7 @@ async function fetchOrders(): Promise<DashboardOrder[]> {
 export default function DashboardPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
+  const { t } = useTranslation();
 
   const canSeeMap = userRole === "admin" || userRole === "waiter";
 
@@ -53,10 +55,10 @@ export default function DashboardPage() {
   }, []);
 
   const tableOptions = [
-    { label: "Totes les taules", value: "" },
+    { label: t("dashboard.allTables"), value: "" },
     ...Array.from(new Set(orders.map((o) => o.tableNumber ?? "—")))
       .sort()
-      .map((t) => ({ label: `Taula ${t}`, value: t })),
+      .map((tbl) => ({ label: t("dashboard.table", { number: tbl }), value: tbl })),
   ];
 
   const filteredOrders = orders.filter((order) => {
@@ -81,10 +83,10 @@ export default function DashboardPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
             <div>
               <h1 style={{ fontFamily: "Fustat", color: "var(--color-dark-blue)", fontSize: 32, margin: "0 0 8px 0" }}>
-                Benvingut de nou, {user?.name}!
+                {t("dashboard.welcome", { name: user?.name })}
               </h1>
               <p style={{ color: "#6B7280", fontSize: 14, margin: 0 }}>
-                Role: <span style={{ fontWeight: 600, color: "#0F172A" }}>{user?.role?.toUpperCase()}</span>
+                {t("dashboard.role")} <span style={{ fontWeight: 600, color: "#0F172A" }}>{user?.role?.toUpperCase()}</span>
               </p>
             </div>
           </div>
@@ -92,15 +94,15 @@ export default function DashboardPage() {
           {canSeeMap && <FloorMapSection onOrderChange={refresh} />}
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 32, flexWrap: "wrap" }}>
-            <BigButton label="Total comandes" value={filteredOrders.length.toString()} />
-            <BigButton label="Pendents" value={pendingCount.toString()} />
+            <BigButton label={t("dashboard.totalOrders")} value={filteredOrders.length.toString()} />
+            <BigButton label={t("dashboard.pending")} value={pendingCount.toString()} />
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginBottom: 40, flexWrap: "wrap" }}>
             <SearchBar
               value={globalSearch}
               onChange={setGlobalSearch}
-              placeholder="Cerca comandes o taules..."
+              placeholder={t("dashboard.searchPlaceholder")}
             />
             <SelectDropdown
               options={tableOptions}
@@ -110,13 +112,13 @@ export default function DashboardPage() {
           </div>
 
           <h2 style={{ fontFamily: "Fustat", fontSize: 22, color: "var(--color-dark-blue)", margin: "0 0 30px 0" }}>
-            Comandes Actives
+            {t("dashboard.activeOrders")}
           </h2>
 
           {loadingOrders ? (
-            <p style={{ textAlign: "center", color: "#6B7280" }}>Carregant comandes...</p>
+            <p style={{ textAlign: "center", color: "#6B7280" }}>{t("dashboard.loading")}</p>
           ) : filteredOrders.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#6B7280" }}>No hi ha comandes actives.</p>
+            <p style={{ textAlign: "center", color: "#6B7280" }}>{t("dashboard.noOrders")}</p>
           ) : (
             <div style={{
               display: "grid",
@@ -144,7 +146,6 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

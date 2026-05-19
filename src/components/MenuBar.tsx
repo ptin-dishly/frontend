@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
 import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
@@ -8,9 +9,11 @@ import { BsForkKnife } from "react-icons/bs";
 import { MdMenuBook } from "react-icons/md";
 import Logo from "./Logo";
 import UserProfile from "./UserProfile";
+import LanguageSelector from "./LanguageSelector";
 
 interface MenuBarProps {
   role: "admin" | "kitchen" | "waiter" | "sales";
+  fixed?: boolean;
 }
 
 type MenuItem = {
@@ -19,34 +22,46 @@ type MenuItem = {
   icon: IconType;
 };
 
-export default function MenuBar({ role }: MenuBarProps) {
+export default function MenuBar({ role, fixed = true }: MenuBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fixed) {
+      return;
+    }
+
+    document.body.classList.add("has-fixed-menubar");
+    return () => {
+      document.body.classList.remove("has-fixed-menubar");
+    };
+  }, [fixed]);
 
   const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
-      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
-      { label: "Tables", route: "/tables", icon: BsForkKnife },
-      { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
-      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
-      { label: "Menus", route: "/menus", icon: MdMenuBook },
-      { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: "Dishes", route: "/dishes", icon: BsForkKnife },
+      { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
+      { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
+      { label: t("nav.kitchen"), route: "/kitchen", icon: FaClipboardList },
+      { label: t("nav.bookings"), route: "/bookings", icon: FaCalendarCheck },
+      { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
+      { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
+      { label: t("nav.dishes"), route: "/dishes", icon: BsForkKnife },
     ],
     kitchen: [
-      { label: "Kitchen", route: "/kitchen", icon: FaClipboardList },
-      { label: "Ingredients", route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: "Dishes", route: "/dishes", icon: BsForkKnife },
+      { label: t("nav.kitchen"), route: "/kitchen", icon: FaClipboardList },
+      { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
+      { label: t("nav.dishes"), route: "/dishes", icon: BsForkKnife },
     ],
     waiter: [
-      { label: "Dashboard", route: "/dashboard", icon: RxDashboard },
-      { label: "Tables", route: "/tables", icon: BsForkKnife },
-      { label: "Menus", route: "/menus", icon: MdMenuBook },
+      { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
+      { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
+      { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
     ],
     sales: [
-      { label: "Tables", route: "/tables", icon: BsForkKnife },
-      { label: "Bookings", route: "/bookings", icon: FaCalendarCheck },
+      { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
+      { label: t("nav.bookings"), route: "/bookings", icon: FaCalendarCheck },
     ],
   };
 
@@ -56,17 +71,22 @@ export default function MenuBar({ role }: MenuBarProps) {
   return (
     <div
       style={{
-        width: "clamp(200px, 26vw, 250px)",
+        position: fixed ? "fixed" : "relative",
+        top: fixed ? 0 : undefined,
+        left: fixed ? 0 : undefined,
+        zIndex: fixed ? 2000 : undefined,
+        width: "var(--menubar-width)",
         backgroundColor: "#0F172A",
-        height: "calc(100dvh - 60px)",
-        padding: "20px",
+        height: "100dvh",
+        boxSizing: "border-box",
+        padding: "16px",
         borderTopRightRadius: 50,
         borderBottomRightRadius: 50,
         color: "white",
         display: "flex",
         flexDirection: "column",
-        gap: "20px",
-        overflowY: "hidden",
+        gap: "14px",
+        overflow: "hidden",
       }}
     >
       <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
@@ -75,11 +95,11 @@ export default function MenuBar({ role }: MenuBarProps) {
 
       <div
         style={{
-          overflowY: "auto",
-          maxHeight: "calc(100dvh - 300px)",
+          flex: 1,
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          gap: "20px",
+          minHeight: 0,
         }}
       >
         {items.map((item) => {
@@ -97,9 +117,9 @@ export default function MenuBar({ role }: MenuBarProps) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
+                gap: "14px",
                 width: "100%",
-                padding: "14px 16px",
+                padding: "10px 14px",
                 borderRadius: "14px",
                 border: "none",
                 background: isActive ? "var(--color-white)" : isHovered ? "#f5f5f7" : "transparent",
@@ -108,7 +128,7 @@ export default function MenuBar({ role }: MenuBarProps) {
                 transition: "background 0.2s, color 0.2s",
                 textAlign: "left",
                 fontWeight: isActive ? 600 : 400,
-                fontSize: "14px",
+                fontSize: "16px",
               }}
               title={item.label}
             >
@@ -122,6 +142,7 @@ export default function MenuBar({ role }: MenuBarProps) {
       </div>
 
       <div style={{ marginTop: "auto" }}>
+        <LanguageSelector />
         <UserProfile />
       </div>
     </div>

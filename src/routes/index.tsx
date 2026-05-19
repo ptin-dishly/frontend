@@ -11,6 +11,7 @@ import OrderPage from "../pages/OrderPage";
 import TablesPage from "../pages/TablePage";
 import BookingsPage from "../pages/BookingPage";
 import RecipeCreatePage from "../pages/DishCreatePage";
+import AllComponents from "../pages/AllComponents";
 
 export function AppRoutes() {
   return (
@@ -104,6 +105,15 @@ export function AppRoutes() {
           element={
             <ProtectedRoute>
               <NewIngredientPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/test-components"
+          element={
+            <ProtectedRoute>
+              <AllComponents />
             </ProtectedRoute>
           }
         />

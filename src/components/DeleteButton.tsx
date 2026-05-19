@@ -1,5 +1,4 @@
 // src/components/DeleteButton.tsx
-import React from "react";
 // Importamos el icono de papelera de Heroicons
 import { HiOutlineTrash } from "react-icons/hi2";
 

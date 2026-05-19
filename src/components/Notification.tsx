@@ -1,5 +1,4 @@
 // src/components/Notification.tsx
-import React from "react";
 // Importamos el icono de la campana (v-outline) de la colección Heroicons
 import { HiBell } from "react-icons/hi2";
 
