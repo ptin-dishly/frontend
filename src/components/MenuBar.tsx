@@ -43,20 +43,21 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
     admin: [
       { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
       { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
-      { label: t("nav.kitchen"), route: "/kitchen", icon: FaClipboardList },
+      { label: t("nav.orders"), route: "/orders", icon: FaClipboardList },
       { label: t("nav.bookings"), route: "/bookings", icon: FaCalendarCheck },
       { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
       { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
       { label: t("nav.dishes"), route: "/dishes", icon: BsForkKnife },
     ],
     kitchen: [
-      { label: t("nav.kitchen"), route: "/kitchen", icon: FaClipboardList },
+     
       { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
       { label: t("nav.dishes"), route: "/dishes", icon: BsForkKnife },
     ],
     waiter: [
       { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
       { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
+      { label: t("nav.orders"), route: "/orders", icon: FaClipboardList },
       { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
     ],
     sales: [

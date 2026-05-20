@@ -2,7 +2,7 @@
   "nav": {
     "dashboard": "Tauler",
     "tables": "Taules",
-    "kitchen": "Cuina",
+    "orders": "Ordres",
     "bookings": "Reserves",
     "menus": "Menús",
     "ingredients": "Ingredients",
@@ -171,7 +171,8 @@
     "pending": "Pendent",
     "inProgress": "En procés",
     "ready": "Llest",
-    "completed": "Completat",
+    "confirmed": "Confirmada",
+    "preparing": "Preparant",
     "loading": "Carregant comandes...",
     "notFound": "No s'han trobat comandes",
     "table": "Taula: {{number}}",

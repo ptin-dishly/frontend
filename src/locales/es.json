@@ -2,7 +2,7 @@
   "nav": {
     "dashboard": "Panel",
     "tables": "Mesas",
-    "kitchen": "Cocina",
+    "orders": "Ordenes",
     "bookings": "Reservas",
     "menus": "Menús",
     "ingredients": "Ingredientes",
@@ -171,7 +171,8 @@
     "pending": "Pendiente",
     "inProgress": "En proceso",
     "ready": "Listo",
-    "completed": "Completado",
+    "confirmed": "Confirmat",
+    "preparing": "Preparando",
     "loading": "Cargando comandas...",
     "notFound": "No se han encontrado comandas",
     "table": "Mesa: {{number}}",

@@ -409,98 +409,77 @@ export const tableService = {
   },
 };
 
-// ============================================================================
-// ORDERS (FAKE DATA - No API endpoint)
-// ============================================================================
 
-export interface OrderItem {
+export interface Establishment {
   id: string;
   name: string;
-  quantity: number;
-  price: number;
+  address: string;
+  phone: string;
+  email: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
+
+export const establishmentService = {
+  getAll: () =>
+    api<Establishment[]>("/establishments"),
+
+  getById: (id: string) =>
+    api<Establishment>(`/establishments/${id}`),
+};
+// ============================================================================
+// ORDERS (REAL API)
+// ============================================================================
 
 export interface Order {
   id: string;
-  orderNumber: string;
+  tableId: string;
   tableNumber: string;
-  status: "pending" | "in_progress" | "ready" | "completed";
-  items: OrderItem[];
-  total: number;
+  status: "pending" | "confirmed" | "cancelled" | "completed";
   createdAt: string;
+
+  items: {
+    name: string;
+    quantity: number;
+    price: number;
+  }[];
+
+  total: number;
 }
 
-let FAKE_ORDERS: Order[] = [
-  {
-    id: "1",
-    orderNumber: "#001",
-    tableNumber: "2",
-    status: "pending",
-    items: [
-      { id: "1", name: "Lasaña de carne", quantity: 1, price: 15.5 },
-      { id: "2", name: "Salmón a la plancha", quantity: 2, price: 18.0 },
-    ],
-    total: 51.5,
-    createdAt: "2026-05-02T10:30:00Z",
-  },
-  {
-    id: "2",
-    orderNumber: "#002",
-    tableNumber: "5",
-    status: "in_progress",
-    items: [{ id: "3", name: "Crema catalana", quantity: 1, price: 8.5 }],
-    total: 8.5,
-    createdAt: "2026-05-02T10:45:00Z",
-  },
-  {
-    id: "3",
-    orderNumber: "#003",
-    tableNumber: "3",
-    status: "ready",
-    items: [{ id: "4", name: "Ensalada César", quantity: 3, price: 12.0 }],
-    total: 36.0,
-    createdAt: "2026-05-02T11:00:00Z",
-  },
-];
-
 export const orderService = {
-  getAll: async (): Promise<ApiResponse<Order[]>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, data: FAKE_ORDERS });
-      }, 500);
-    });
-  },
-  getById: async (id: string): Promise<ApiResponse<Order>> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const order = FAKE_ORDERS.find((o) => o.id === id);
-        if (order) {
-          resolve({ success: true, data: order });
-        } else {
-          reject(new APIError("NOT_FOUND", 404, "Order not found"));
-        }
-      }, 500);
-    });
-  },
-  updateStatus: async (
-    id: string,
-    status: Order["status"]
-  ): Promise<ApiResponse<Order>> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const orderIndex = FAKE_ORDERS.findIndex((o) => o.id === id);
-        if (orderIndex !== -1) {
-          FAKE_ORDERS[orderIndex].status = status;
-          resolve({ success: true, data: FAKE_ORDERS[orderIndex] });
-        } else {
-          reject(new APIError("NOT_FOUND", 404, "Order not found"));
-        }
-      }, 500);
-    });
-  },
-};
 
+  // NUEVO
+  getAllActive: () =>
+    api<Order[]>("/orders/active"),
+
+  getByEstablishment: (establishmentId: string) =>
+    api<Order[]>(`/orders/establishment/${establishmentId}`),
+
+  getById: (id: string) =>
+    api<Order>(`/orders/${id}`),
+
+  create: (data: Partial<Order>) =>
+    api<Order>("/orders", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (
+    id: string,
+    data: Partial<Order>
+  ) =>
+    api<Order>(`/orders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    api<void>(`/orders/${id}`, {
+      method: "DELETE",
+    }),
+};
 // ============================================================================
 // BOOKINGS (FAKE DATA - No API endpoint)
 // ============================================================================
