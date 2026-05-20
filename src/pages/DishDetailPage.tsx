@@ -454,6 +454,7 @@ export default function DishDetailPage() {
             >
               {t("common.back")}
             </button>
+            
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}

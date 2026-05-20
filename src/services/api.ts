@@ -649,3 +649,19 @@ export const bookingService = {
     });
   },
 };
+
+// ============================================================================
+// RECIPE STEPS
+// ============================================================================
+
+export interface RecipeStep {
+  id: string;
+  recipeId: string;
+  stepNumber: number;
+  instruction: string;
+  duration?: number | null;
+}
+
+export const recipeStepService = {
+  getByRecipe: (recipeId: string) => api<RecipeStep[]>(`/recipe-steps/recipe/${recipeId}`),
+};

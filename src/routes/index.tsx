@@ -84,6 +84,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        
 
         <Route
           path="/dishes/new"
