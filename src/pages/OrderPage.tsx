@@ -10,6 +10,8 @@ import {
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
+import PrintButton from "../components/printbutton";
+import KitchenTicket from "../components/kitchenTicket.tsx";
 
 export default function OrderPage() {
   const user = getCurrentUser();
@@ -153,6 +155,10 @@ console.log("FILTERED:", filteredOrders);
     } catch (err) {
       console.error("Error updating order status:", err);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -500,6 +506,7 @@ console.log("FILTERED:", filteredOrders);
                 Imprimir PDF
               </button>
             </div>
+            <KitchenTicket order={selectedOrder} />
           </div>
         </div>
       )}

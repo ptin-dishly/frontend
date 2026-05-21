@@ -12,12 +12,15 @@ import TablesPage from "../pages/TablePage";
 import BookingsPage from "../pages/BookingPage";
 import RecipeCreatePage from "../pages/DishCreatePage";
 import AllComponents from "../pages/AllComponents";
+import ClientMenuPage from "../pages/ClientMenuPage";
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LogInPage />} />
+        <Route path="/client/menu" element={<ClientMenuPage />} />
+        <Route path="/client/menu/:menuId" element={<ClientMenuPage />} />
         
         <Route
           path="/dashboard"
@@ -81,6 +84,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        
 
         <Route
           path="/dishes/new"
