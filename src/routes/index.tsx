@@ -50,7 +50,7 @@ export function AppRoutes() {
         />
         
         <Route
-          path="/kitchen"
+          path="/orders"
           element={
             <ProtectedRoute>
               <OrderPage />

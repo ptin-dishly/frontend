@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { orderService, type Order } from "../services/api";
+import {
+  orderService,
+  tableService,
+  type Order,
+  type Table,
+} from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
@@ -10,14 +15,27 @@ import KitchenTicket from "../components/kitchenTicket.tsx";
 
 export default function OrderPage() {
   const user = getCurrentUser();
-  const userRole = (user?.role || "waiter") as "admin" | "kitchen" | "waiter" | "sales";
+  
+  const userRole = (user?.role || "waiter") as
+    | "admin"
+    | "kitchen"
+    | "waiter"
+    | "sales";
+
   const { t } = useTranslation();
 
-  if (!["admin", "kitchen"].includes(userRole)) {
+  if (!["admin", "waiter"].includes(userRole)) {
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <MenuBar role={userRole} />
-        <main style={{ flex: 1, padding: "40px 48px", textAlign: "center" }}>
+
+        <main
+          style={{
+            flex: 1,
+            padding: "40px 48px",
+            textAlign: "center",
+          }}
+        >
           <p style={{ fontSize: "16px", color: "#6B7280" }}>
             {t("orders.accessDenied")}
           </p>
@@ -27,60 +45,111 @@ export default function OrderPage() {
   }
 
   const [orders, setOrders] = useState<Order[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
   const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterTable, setFilterTable] = useState<string>("");
+
   const [searchTerm, setSearchTerm] = useState<string>("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await orderService.getAll();
-        if (res.success && res.data) {
-          setOrders(res.data);
-        }
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-        setError("Failed to load orders");
-      } finally {
-        setLoading(false);
+ useEffect(() => {
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const currentUser = getCurrentUser();
+      const establishmentId = currentUser?.establishmentId;
+
+      if (!establishmentId) {
+        setError("No establishment assigned");
+        return;
       }
-    };
 
-    fetchOrders();
-  }, []);
+      const res = await orderService.getAllActive();
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesStatus = !filterStatus || order.status === filterStatus;
-    const matchesSearch =
-      !searchTerm ||
-      order.orderNumber.includes(searchTerm) ||
-      order.tableNumber.includes(searchTerm);
-    return matchesStatus && matchesSearch;
-  });
+      if (res.success && res.data) {
+        setOrders(res.data);
+        const tablesRes = await tableService.getAll();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending": return "#F59E0B";
-      case "in_progress": return "#3B82F6";
-      case "ready": return "#22C55E";
-      case "completed": return "#6B7280";
-      default: return "#6B7280";
+      if (tablesRes.success && tablesRes.data) {
+        setTables(tablesRes.data);
+      }
+      }
+
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError("Failed to load orders");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+  fetchOrders();
+}, []);
 
-  const updateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
+const filteredOrders = orders.filter((order) => {
+  const matchesStatus =
+    !filterStatus || order.status === filterStatus;
+
+  const matchesSearch =
+    !searchTerm || order.id.includes(searchTerm);
+
+  const matchesTable =
+    !filterTable || order.tableNumber === filterTable;
+
+  return (
+    matchesStatus &&
+    matchesSearch &&
+    matchesTable
+  );
+});
+
+console.log("ORDERS:", orders);
+console.log("FILTERED:", filteredOrders);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "#F59E0B";
+
+      case "confirmed":
+        return "#22C55E";
+
+      case "preparing":
+        return "#3b38d3";
+
+      case "completed":
+        return "#6B7280";
+
+      default:
+        return "#6B7280";
+    }
+  };
+
+  const selectedOrder = orders.find(
+    (o) => o.id === selectedOrderId
+  );
+
+  const updateOrderStatus = async (
+    orderId: string,
+    newStatus: Order["status"]
+  ) => {
     try {
-      const res = await orderService.updateStatus(orderId, newStatus);
+      const res = await orderService.update(orderId, {
+        status: newStatus,
+      });
+
       if (res.success && res.data) {
         setOrders((prevOrders) =>
-          prevOrders.map((order) => (order.id === orderId ? res.data! : order))
+          prevOrders.map((order) =>
+            order.id === orderId ? res.data! : order
+          )
         );
+
         setSelectedOrderId(null);
       }
     } catch (err) {
@@ -98,27 +167,69 @@ export default function OrderPage() {
 
       <main style={{ flex: 1, padding: "40px 48px" }}>
         <div style={{ marginBottom: 30 }}>
-          <h1 style={{ fontSize: 32, color: "#0F172A", margin: 0 }}>{t("orders.title")}</h1>
+          <h1
+            style={{
+              fontSize: 32,
+              color: "#0F172A",
+              margin: 0,
+            }}
+          >
+            {t("orders.title")}
+          </h1>
         </div>
 
         {error && (
-          <div style={{ backgroundColor: "#FEE2E2", color: "#DC2626", padding: "16px", borderRadius: "8px", marginBottom: "24px", fontSize: "14px" }}>
+          <div
+            style={{
+              backgroundColor: "#FEE2E2",
+              color: "#DC2626",
+              padding: "16px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+              fontSize: "14px",
+            }}
+          >
             ⚠️ {error}
           </div>
         )}
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 44, gap: 24, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 44,
+            gap: 24,
+            flexWrap: "wrap",
+          }}
+        >
           <div style={{ maxWidth: 420, width: "100%" }}>
-            <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder={t("orders.searchPlaceholder")} />
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder={t("orders.searchPlaceholder")}
+            />
           </div>
 
           <SelectDropdown
             options={[
+              { label: "Todas las mesas", value: "" },
+
+              ...tables.map((table) => ({
+                label: `Mesa ${table.number}`,
+                value: table.number.toString(),
+              })),
+            ]}
+            value={filterTable}
+            onChange={setFilterTable}
+            placeholder="Filtrar por mesa"
+          />
+          <SelectDropdown
+            options={[
               { label: t("orders.allStatus"), value: "" },
               { label: t("orders.pending"), value: "pending" },
-              { label: t("orders.inProgress"), value: "in_progress" },
-              { label: t("orders.ready"), value: "ready" },
-              { label: t("orders.completed"), value: "completed" },
+              { label: t("orders.confirmed"), value: "confirmed" },
+              { label: t("orders.preparing"), value: "preparing" },
             ]}
             value={filterStatus}
             onChange={setFilterStatus}
@@ -127,123 +238,278 @@ export default function OrderPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "#6B7280" }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              color: "#6B7280",
+            }}
+          >
             <p>{t("orders.loading")}</p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: 20 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fill, minmax(350px, 1fr))",
+              gap: 20,
+            }}
+          >
             {filteredOrders.length === 0 ? (
-              <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
+              <p
+                style={{
+                  gridColumn: "1 / -1",
+                  textAlign: "center",
+                  color: "#6B7280",
+                }}
+              >
                 {t("orders.notFound")}
               </p>
             ) : (
               filteredOrders.map((order) => (
                 <div
                   key={order.id}
-                  onClick={() => setSelectedOrderId(order.id)}
-                  style={{ backgroundColor: "white", borderRadius: 12, padding: 20, border: `2px solid ${getStatusColor(order.status)}`, cursor: "pointer", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(0)"; }}
+                  onClick={() =>
+                    setSelectedOrderId(order.id)
+                  }
+                  style={{
+                    backgroundColor: "white",
+                    borderRadius: 12,
+                    padding: 20,
+                    border: `2px solid ${getStatusColor(
+                      order.status
+                    )}`,
+                    cursor: "pointer",
+                  }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <h3 style={{ margin: 0, fontSize: 18, color: "#0F172A" }}>{order.orderNumber}</h3>
-                    <span style={{ backgroundColor: getStatusColor(order.status), color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, textTransform: "capitalize" }}>
-                      {order.status.replace("_", " ")}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    
+
+                    <span
+                      style={{
+                        backgroundColor: getStatusColor(
+                          order.status
+                        ),
+                        color: "white",
+                        padding: "4px 12px",
+                        borderRadius: 20,
+                      }}
+                    >
+                      {order.status}
                     </span>
                   </div>
 
-                  <p style={{ margin: "8px 0", color: "#6B7280", fontSize: 14 }}>
-                    {t("orders.table", { number: order.tableNumber })}
-                  </p>
+                  
+                  <div>
+                          <p
+                            style={{
+                              margin: "0 0 8px 0",
+                              color: "#374151",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Mesa {order.tableNumber}
+                          </p>
 
-                  <div style={{ margin: "12px 0", maxHeight: 100, overflowY: "auto" }}>
-                    {order.items.map((item) => (
-                      <p key={item.id} style={{ margin: "4px 0", fontSize: 13, color: "#6B7280" }}>
-                        {item.quantity}x {item.name}
-                      </p>
-                    ))}
-                  </div>
-
-                  <p style={{ margin: "12px 0 0", fontSize: 14, fontWeight: 600, color: "#0F172A" }}>
-                    {t("orders.total", { amount: order.total.toFixed(2) })}
-                  </p>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: 18,
+                              fontWeight: 700,
+                              color: "#111827",
+                            }}
+                          >
+                            € {order.total?.toFixed(2)}
+                          </p>
+                </div>
                 </div>
               ))
             )}
           </div>
         )}
-
         {selectedOrder && (
+        <div
+          onClick={() => setSelectedOrderId(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 999,
+          }}
+        >
           <div
-            style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
-            onClick={() => setSelectedOrderId(null)}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: 16,
+              width: "90%",
+              maxWidth: 700,
+              padding: 32,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
           >
+            {/* HEADER */}
             <div
-              style={{ backgroundColor: "white", borderRadius: 16, padding: 32, maxWidth: 600, width: "90%", maxHeight: "80vh", overflowY: "auto" }}
-              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 24,
+              }}
             >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
-                <h2 style={{ margin: 0, color: "#0F172A" }}>
-                  {t("orders.orderTitle", { number: selectedOrder.orderNumber })}
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 28,
+                  }}
+                >
+                  Mesa {selectedOrder.tableNumber}
                 </h2>
-                <PrintButton onPrint={handlePrint} />
-              </div>
 
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ color: "#6B7280", fontSize: 14 }}>
-                  <strong>{t("orders.tableLabel")}</strong> {selectedOrder.tableNumber}
-                </p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}>
-                  <strong>{t("orders.statusLabel")}</strong> {selectedOrder.status.replace("_", " ")}
-                </p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}>
-                  <strong>{t("orders.createdLabel")}</strong> {new Date(selectedOrder.createdAt).toLocaleTimeString()}
+                <p
+                  style={{
+                    color: "#6B7280",
+                    marginTop: 8,
+                  }}
+                >
+                  {selectedOrder.status}
                 </p>
               </div>
 
-              <div style={{ marginBottom: 20, borderTop: "1px solid #E5E7EB", paddingTop: 20 }}>
-                <h3 style={{ marginTop: 0, marginBottom: 10, color: "#0F172A" }}>{t("orders.itemsLabel")}</h3>
-                {selectedOrder.items.map((item) => (
-                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14, color: "#6B7280" }}>
-                    <span>{item.quantity}x {item.name}</span>
-                    <span>€{(item.price * item.quantity).toFixed(2)}</span>
+              <button
+                onClick={() => setSelectedOrderId(null)}
+                style={{
+                  border: "none",
+                  background: "#F3F4F6",
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* ITEMS */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
+              {selectedOrder.items?.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    paddingBottom: 12,
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontWeight: 600,
+                        fontSize: 16,
+                      }}
+                    >
+                      {item.name}
+                    </p>
+
+                    <p
+                      style={{
+                        margin: "4px 0 0 0",
+                        color: "#6B7280",
+                      }}
+                    >
+                      x{item.quantity}
+                    </p>
                   </div>
-                ))}
-                <div style={{ borderTop: "1px solid #E5E7EB", marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
-                  <span>{t("orders.totalLabel")}</span>
-                  <span>€{selectedOrder.total.toFixed(2)}</span>
-                </div>
-              </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {selectedOrder.status !== "pending" && (
-                  <button onClick={() => updateOrderStatus(selectedOrder.id, "pending")} style={{ padding: "12px 16px", backgroundColor: "#F59E0B", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("orders.markPending")}
-                  </button>
-                )}
-                {selectedOrder.status !== "in_progress" && (
-                  <button onClick={() => updateOrderStatus(selectedOrder.id, "in_progress")} style={{ padding: "12px 16px", backgroundColor: "#3B82F6", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("orders.markInProgress")}
-                  </button>
-                )}
-                {selectedOrder.status !== "ready" && (
-                  <button onClick={() => updateOrderStatus(selectedOrder.id, "ready")} style={{ padding: "12px 16px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("orders.markReady")}
-                  </button>
-                )}
-                {selectedOrder.status !== "completed" && (
-                  <button onClick={() => updateOrderStatus(selectedOrder.id, "completed")} style={{ padding: "12px 16px", backgroundColor: "#6B7280", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("orders.markCompleted")}
-                  </button>
-                )}
-                <button onClick={() => setSelectedOrderId(null)} style={{ padding: "12px 16px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                  {t("common.close")}
-                </button>
-              </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 700,
+                    }}
+                  >
+                    € {(item.price * item.quantity).toFixed(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* TOTAL */}
+            <div
+              style={{
+                marginTop: 32,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                }}
+              >
+                Total
+              </h2>
+
+              <h2
+                style={{
+                  margin: 0,
+                }}
+              >
+                € {selectedOrder.total?.toFixed(2)}
+              </h2>
+            </div>
+
+            {/* BOTONS */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 16,
+                marginTop: 32,
+              }}
+            >
+              <button
+                onClick={() => window.print()}
+                style={{
+                  backgroundColor: "#111827",
+                  color: "white",
+                  border: "none",
+                  padding: "12px 20px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                Imprimir PDF
+              </button>
             </div>
             <KitchenTicket order={selectedOrder} />
           </div>
-        )}
+        </div>
+      )}
       </main>
     </div>
   );

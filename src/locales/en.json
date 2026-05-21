@@ -2,7 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "tables": "Tables",
-    "kitchen": "Kitchen",
+    "orders": "Orders",
     "bookings": "Bookings",
     "menus": "Menus",
     "ingredients": "Ingredients",
@@ -191,7 +191,8 @@
     "pending": "Pending",
     "inProgress": "In Progress",
     "ready": "Ready",
-    "completed": "Completed",
+    "confirmed": "Confirmed",
+    "preparing": "Preparing",
     "loading": "Loading orders...",
     "notFound": "No orders found",
     "table": "Table: {{number}}",
