@@ -134,33 +134,6 @@ console.log("FILTERED:", filteredOrders);
     (o) => o.id === selectedOrderId
   );
 
-  const updateOrderStatus = async (
-    orderId: string,
-    newStatus: Order["status"]
-  ) => {
-    try {
-      const res = await orderService.update(orderId, {
-        status: newStatus,
-      });
-
-      if (res.success && res.data) {
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order.id === orderId ? res.data! : order
-          )
-        );
-
-        setSelectedOrderId(null);
-      }
-    } catch (err) {
-      console.error("Error updating order status:", err);
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <MenuBar role={userRole} />
@@ -347,7 +320,9 @@ console.log("FILTERED:", filteredOrders);
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 999,
+            padding: 16,
+            boxSizing: "border-box",
+            zIndex: 2100,
           }}
         >
           <div
@@ -355,19 +330,21 @@ console.log("FILTERED:", filteredOrders);
             style={{
               backgroundColor: "white",
               borderRadius: 16,
-              width: "90%",
-              maxWidth: 700,
-              padding: 32,
-              maxHeight: "90vh",
+              width: "min(100%, 760px)",
+              maxWidth: 760,
+              padding: "24px clamp(20px, 4vw, 32px)",
+              maxHeight: "calc(100vh - 32px)",
               overflowY: "auto",
+              boxSizing: "border-box",
             }}
           >
             {/* HEADER */}
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                gap: 16,
+                alignItems: "start",
                 marginBottom: 24,
               }}
             >
@@ -408,8 +385,7 @@ console.log("FILTERED:", filteredOrders);
             {/* ITEMS */}
             <div
               style={{
-                display: "flex",
-                flexDirection: "column",
+                display: "grid",
                 gap: 16,
               }}
             >
@@ -417,8 +393,10 @@ console.log("FILTERED:", filteredOrders);
                 <div
                   key={index}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) auto",
+                    gap: 12,
+                    alignItems: "start",
                     paddingBottom: 12,
                     borderBottom: "1px solid #E5E7EB",
                   }}
@@ -460,8 +438,9 @@ console.log("FILTERED:", filteredOrders);
             <div
               style={{
                 marginTop: 32,
-                display: "flex",
-                justifyContent: "space-between",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: 12,
                 alignItems: "center",
               }}
             >
@@ -483,28 +462,8 @@ console.log("FILTERED:", filteredOrders);
             </div>
 
             {/* BOTONS */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 16,
-                marginTop: 32,
-              }}
-            >
-              <button
-                onClick={() => window.print()}
-                style={{
-                  backgroundColor: "#111827",
-                  color: "white",
-                  border: "none",
-                  padding: "12px 20px",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Imprimir PDF
-              </button>
+            <div style={{ marginTop: 32 }}>
+              <PrintButton onPrint={() => window.print()} label="Imprimir" />
             </div>
             <KitchenTicket order={selectedOrder} />
           </div>
