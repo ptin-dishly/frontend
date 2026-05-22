@@ -641,6 +641,44 @@ export interface RecipeStep {
   duration?: number | null;
 }
 
+const HARDCODED_STEPS: Record<string, RecipeStep[]> = {
+  "77777777-0007-0007-0007-000000000001": [
+    { id: "local-1-1", recipeId: "77777777-0007-0007-0007-000000000001", stepNumber: 1, instruction: "Preparar la salsa bechamel con mantequilla, harina y leche", duration: 15 },
+    { id: "local-1-2", recipeId: "77777777-0007-0007-0007-000000000001", stepNumber: 2, instruction: "Sofreír la cebolla y el ajo, añadir la carne picada y cocinar", duration: 15 },
+    { id: "local-1-3", recipeId: "77777777-0007-0007-0007-000000000001", stepNumber: 3, instruction: "Añadir el tomate triturado y cocinar la boloñesa 10 minutos", duration: 10 },
+    { id: "local-1-4", recipeId: "77777777-0007-0007-0007-000000000001", stepNumber: 4, instruction: "Montar la lasaña en capas y gratinar en el horno a 200°C", duration: 20 },
+  ],
+  "77777777-0007-0007-0007-000000000002": [
+    { id: "local-2-1", recipeId: "77777777-0007-0007-0007-000000000002", stepNumber: 1, instruction: "Salpimentar el salmón y marinar con limón 5 minutos", duration: 5 },
+    { id: "local-2-2", recipeId: "77777777-0007-0007-0007-000000000002", stepNumber: 2, instruction: "Cocinar a la plancha 4 minutos por cada lado", duration: 8 },
+    { id: "local-2-3", recipeId: "77777777-0007-0007-0007-000000000002", stepNumber: 3, instruction: "Servir con perejil picado y rodaja de limón", duration: 2 },
+  ],
+  "77777777-0007-0007-0007-000000000004": [
+    { id: "local-4-1", recipeId: "77777777-0007-0007-0007-000000000004", stepNumber: 1, instruction: "Mezclar yemas de huevo con azúcar y leche caliente", duration: 10 },
+    { id: "local-4-2", recipeId: "77777777-0007-0007-0007-000000000004", stepNumber: 2, instruction: "Cocer a fuego lento hasta espesar", duration: 15 },
+    { id: "local-4-3", recipeId: "77777777-0007-0007-0007-000000000004", stepNumber: 3, instruction: "Enfriar y caramelizar el azúcar con soplete", duration: 5 },
+  ],
+};
+
 export const recipeStepService = {
-  getByRecipe: (recipeId: string) => api<RecipeStep[]>(`/recipe-steps/recipe/${recipeId}`),
+  getByRecipe: (recipeId: string) => {
+    const steps = HARDCODED_STEPS[recipeId] ?? [];
+    return Promise.resolve({ success: true, data: steps });
+  },
+  getById: (id: string) =>
+    api<RecipeStep>(`/recipe-steps/${id}`),
+  create: (data: Omit<RecipeStep, "id">) =>
+    api<RecipeStep>("/recipe-steps", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: Partial<RecipeStep>) =>
+    api<RecipeStep>(`/recipe-steps/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    api<void>(`/recipe-steps/${id}`, {
+      method: "DELETE",
+    }),
 };
