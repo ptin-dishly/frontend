@@ -26,12 +26,10 @@ export default function DishDetailPage() {
   const [editedDish, setEditedDish] = useState<Partial<Recipe> | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Fetch recipe ingredients and group them
   const fetchDishIngredients = async (recipeId: string) => {
     try {
       const res = await recipeService.getIngredients(recipeId);
       if (res.success && res.data) {
-        // Agrupar ingredientes por nombre y sumar cantidades
         const groupedIngredients = res.data.reduce(
           (acc, ingredient) => {
             const existing = acc.find((item) => item.name === ingredient.name);
@@ -69,7 +67,6 @@ export default function DishDetailPage() {
         setDish(recipeRes.data);
         setEditedDish(recipeRes.data);
 
-        // Fetch and group ingredients
         await fetchDishIngredients(id);
 
         setLoading(false);
@@ -176,6 +173,54 @@ export default function DishDetailPage() {
             >
               ⚠️ {error}
             </div>
+          )}
+
+          {/* Image */}
+          {!isEditing && (
+            <>
+              {dish?.imageUrl ? (
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: 600,
+                    height: 300,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    marginBottom: 24,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <img
+                    src={dish.imageUrl}
+                    alt={dish.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: 600,
+                    height: 300,
+                    borderRadius: 12,
+                    backgroundColor: "#F3F4F6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 24,
+                    color: "#9CA3AF",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  {t("common.noImage")}
+                </div>
+              )}
+            </>
           )}
 
           <div style={{ marginBottom: 32 }}>

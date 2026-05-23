@@ -9,6 +9,7 @@
     "dishes": "Dishes"
   },
   "common": {
+    "noImage": "No image",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
@@ -118,24 +119,32 @@
   },
   "dishCreate": {
     "title": "Create New Recipe",
+    "imageUrl": "Image URL",
     "backToDishes": "Back to Dishes",
-    "recipeName": "Recipe Name *",
-    "recipeNamePlaceholder": "e.g., Meat Lasagna",
+    "name": "Recipe Name *",
+    "namePlaceholder": "e.g., Meat Lasagna",
     "description": "Description",
     "descriptionPlaceholder": "e.g., Delicious homemade lasagna...",
     "category": "Category *",
     "portionSize": "Portion Size (kg) *",
     "servings": "Servings *",
     "prepTime": "Preparation Time (minutes) *",
+    "ingredient": "Ingredient",
+    "ingredientPlaceholder": "Search ingredient...",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "optional": "Opt.",
+    "addIngredient": "+ Add",
+    "ingredients": "Ingredients",
     "createButton": "Create Recipe",
     "creating": "Creating...",
     "categories": {
-      "starter": "Starter",
-      "firstCourse": "First Course",
-      "secondCourse": "Second Course",
-      "dessert": "Dessert",
-      "sauce": "Sauce",
-      "drink": "Drink"
+      "entrante": "Starter",
+      "primer_plato": "First Course",
+      "segundo_plato": "Second Course",
+      "postre": "Dessert",
+      "salsa": "Sauce",
+      "bebida": "Drink"
     }
   },
   "ingredients": {
@@ -250,5 +259,27 @@
   "clearAll": "Clear All",
   "title": "Allergens",
   "noAllergens": "No allergens"
+  },
+  "menuCreate": {
+    "title": "Create New Menu",
+    "backToMenus": "Back to Menus",
+    "name": "Menu Name *",
+    "namePlaceholder": "e.g., Lunch Menu",
+    "isPublic": "Public Menu",
+    "isPublicDescription": "Visible on QR code",
+    "recipe": "Dish",
+    "recipePlaceholder": "Search dish...",
+    "price": "Price",
+    "pricePlaceholder": "0.00",
+    "suggestedPrice": "Suggested Price:",
+    "noHistory": "No history",
+    "displayOrder": "Order",
+    "available": "Available",
+    "addItem": "+ Add",
+    "items": "Menu Dishes",
+    "menuItems": "Added Dishes",
+    "createButton": "Create Menu",
+    "creating": "Creating...",
+    "noItemsAdded": "No dishes added yet"
   }
 }

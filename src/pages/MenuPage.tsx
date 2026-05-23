@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { menuService, allergenService, userService, type Menu, type MenuItem, type Allergen } from "../services/api";
+import { menuService, allergenService, userService, recipeService, type Menu, type MenuItem, type Allergen} from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import AllergenMultiFilter from "../components/AllergenMultiFilter";
@@ -29,7 +29,7 @@ export default function MenusPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  if (!["admin"].includes(userRole)) {
+  if (!["admin", "waiter"].includes(userRole)) {
     navigate("/dashboard");
     return null;
   }
@@ -61,9 +61,6 @@ export default function MenusPage() {
   const [menuSearch, setMenuSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newMenuName, setNewMenuName] = useState("");
-  const [creatingLoading, setCreatingLoading] = useState(false);
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [excludedAllergenIds, setExcludedAllergenIds] = useState<string[]>([]);
   const [menusWithAllergens, setMenusWithAllergens] = useState<Record<string, Allergen[]>>({});
@@ -76,92 +73,73 @@ export default function MenusPage() {
   const [editingMenuPublic, setEditingMenuPublic] = useState(false);
   const [savingMenu, setSavingMenu] = useState(false);
 
-  // Fetch allergens on mount
+  // Fetch menus and allergens
   useEffect(() => {
-    const fetchAllergens = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const res = await allergenService.getAll();
-        if (res.success && res.data) {
-          setAllergens(res.data);
+        const userRes = await userService.getMe();
+        if (!userRes.success || !userRes.data) {
+          setError("Failed to get user information");
+          setLoading(false);
+          return;
+        }
+
+        const currentUser = userRes.data;
+        const establishmentId = currentUser.establishmentId;
+
+        if (!establishmentId) {
+          setError("User has no establishment assigned");
+          setLoading(false);
+          return;
+        }
+
+        // Obtener menus y allergens en paralelo
+        const [menusRes, allergensRes] = await Promise.all([
+          menuService.getByEstablishment(establishmentId),
+          allergenService.getAll(),
+        ]);
+
+        if (menusRes.success && menusRes.data) {
+          setMenus(menusRes.data);
+
+          // Enriquecer menus con alérgenos
+          if (menusRes.data.length > 0) {
+            const results: Record<string, Allergen[]> = {};
+
+            await Promise.all(
+              menusRes.data.map(async (menu) => {
+                try {
+                  const res = await allergenService.getByMenu(menu.id);
+                  if (res.success && res.data) {
+                    results[menu.id] = res.data;
+                  }
+                } catch (err) {
+                  console.error(`Error fetching allergens for menu ${menu.id}:`, err);
+                }
+              })
+            );
+
+            setMenusWithAllergens(results);
+          }
+        } else {
+          setError("Failed to load menus");
+        }
+
+        if (allergensRes.success && allergensRes.data) {
+          setAllergens(allergensRes.data);
         }
       } catch (err) {
-        console.error("Error fetching allergens:", err);
-      }
-    };
-
-    fetchAllergens();
-  }, []);
-
-  // Fetch menus by establishment
-  useEffect(() => {
-    if (view === "list") {
-      fetchMenus();
-    }
-  }, [view]);
-
-  const fetchMenus = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const userRes = await userService.getMe();
-      if (!userRes.success || !userRes.data) {
-        setError("Failed to get user information");
-        setLoading(false);
-        return;
-      }
-
-      const currentUser = userRes.data;
-      const establishmentId = currentUser.establishmentId;
-
-      if (!establishmentId) {
-        setError("User has no establishment assigned");
-        setLoading(false);
-        return;
-      }
-
-      const res = await menuService.getByEstablishment(establishmentId);
-      if (res.success && res.data) {
-        setMenus(res.data);
-      } else {
+        console.error("Error fetching data:", err);
         setError("Failed to load menus");
-      }
-    } catch (err) {
-      console.error("Error fetching menus:", err);
-      setError("Failed to load menus");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch allergens for each menu
-  useEffect(() => {
-    const fetchAllergensForMenus = async () => {
-      if (menus.length === 0) return;
-
-      try {
-        const results: Record<string, Allergen[]> = {};
-
-        await Promise.all(
-          menus.map(async (menu) => {
-            try {
-              const res = await allergenService.getByMenu(menu.id);
-              if (res.success && res.data) {
-                results[menu.id] = res.data;
-              }
-            } catch (err) {
-              console.error(`Error fetching allergens for menu ${menu.id}:`, err);
-            }
-          })
-        );
-
-        setMenusWithAllergens(results);
-      } catch (err) {
-        console.error("Error fetching allergens for menus:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchAllergensForMenus();
-  }, [menus]);
+    fetchData();
+  }, []);
 
   // Fetch menu items
   const fetchMenuItems = async (menuId: string) => {
@@ -169,49 +147,32 @@ export default function MenusPage() {
     try {
       const res = await menuService.getItems();
       if (res.success && res.data) {
-        // Filtrar items por menu id
         const filtered = res.data.filter((item) => item.menuCardId === menuId);
-        setMenuItems(filtered);
+        
+        // Enriquecer items con imágenes de recipes
+        const enrichedItems = await Promise.all(
+          filtered.map(async (item) => {
+            try {
+              const recipeRes = await recipeService.getById(item.recipeId);
+              if (recipeRes.success && recipeRes.data) {
+                return {
+                  ...item,
+                  imageUrl: recipeRes.data.imageUrl,
+                };
+              }
+            } catch (err) {
+              console.error(`Error fetching recipe ${item.recipeId}:`, err);
+            }
+            return item;
+          })
+        );
+        
+        setMenuItems(enrichedItems);
       }
     } catch (err) {
       console.error("Error fetching menu items:", err);
     } finally {
       setDetailLoading(false);
-    }
-  };
-
-  const handleCreateMenu = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMenuName.trim()) return;
-
-    setCreatingLoading(true);
-    try {
-      const userRes = await userService.getMe();
-      if (!userRes.success || !userRes.data) {
-        setError("Failed to get user information");
-        setCreatingLoading(false);
-        return;
-      }
-
-      const res = await menuService.create({
-        name: newMenuName,
-        isPublic: false,
-        establishmentId: userRes.data.establishmentId,
-        qrCodeUrl: null,
-      });
-
-      if (res.success && res.data) {
-        setMenus([...menus, res.data]);
-        setNewMenuName("");
-        setIsCreating(false);
-      } else {
-        setError("Failed to create menu");
-      }
-    } catch (err) {
-      console.error("Error creating menu:", err);
-      setError("Error creating menu");
-    } finally {
-      setCreatingLoading(false);
     }
   };
 
@@ -264,14 +225,10 @@ export default function MenusPage() {
     setView("detail");
   };
 
-  // Filter menus - check if menu has ANY of the excluded allergens (OR logic)
+  // Filter menus
   const filteredMenus = menus.filter((menu) => {
     const matchesSearch = menu.name.toLowerCase().includes(menuSearch.toLowerCase());
-
-    // Get allergens of this menu
     const menuAllergenIds = (menusWithAllergens[menu.id] || []).map((a) => a.id);
-
-    // Check if this menu has ANY of the excluded allergens
     const hasExcludedAllergen = excludedAllergenIds.some((allergenId) =>
       menuAllergenIds.includes(allergenId)
     );
@@ -307,7 +264,7 @@ export default function MenusPage() {
             </div>
           )}
 
-          {/* Filters Row - Search, Allergen Filter, and New Button */}
+          {/* Filters Row */}
           <div
             style={{
               display: "flex",
@@ -335,7 +292,7 @@ export default function MenusPage() {
             </div>
 
             <button
-              onClick={() => setIsCreating(!isCreating)}
+              onClick={() => navigate("/menus/new")}
               style={{
                 backgroundColor: "var(--color-green)",
                 color: "white",
@@ -348,54 +305,9 @@ export default function MenusPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {isCreating ? t("common.cancel") : t("menus.newMenu")}
+              {t("menus.newMenu")}
             </button>
           </div>
-
-          {isCreating && (
-            <form
-              onSubmit={handleCreateMenu}
-              style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 8,
-                marginBottom: 24,
-                border: "1px solid #E5E7EB",
-                display: "flex",
-                gap: 12,
-              }}
-            >
-              <input
-                type="text"
-                value={newMenuName}
-                onChange={(e) => setNewMenuName(e.target.value)}
-                placeholder={t("menus.namePlaceholder")}
-                style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  borderRadius: 6,
-                  border: "1px solid #E5E7EB",
-                  fontSize: 14,
-                  fontFamily: "inherit",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={creatingLoading}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#22C55E",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontWeight: 600,
-                  cursor: creatingLoading ? "not-allowed" : "pointer",
-                }}
-              >
-                {creatingLoading ? t("common.creating") : t("common.create")}
-              </button>
-            </form>
-          )}
 
           <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
             {t("menus.showing", { filtered: filteredMenus.length, total: menus.length })}
@@ -474,7 +386,6 @@ export default function MenusPage() {
                       {t("menus.created")} {new Date(menu.createdAt).toLocaleDateString()}
                     </p>
 
-                    {/* Show allergens in menu card with icons */}
                     {menusWithAllergens[menu.id] && menusWithAllergens[menu.id].length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
                         {menusWithAllergens[menu.id].map((allergen) => (
@@ -520,7 +431,7 @@ export default function MenusPage() {
     );
   }
 
-  // Detail view (mantener igual)
+  // Detail view
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
       <MenuBar role={userRole} />
@@ -687,79 +598,120 @@ export default function MenusPage() {
                 <p>{t("menus.loadingItems")}</p>
               </div>
             ) : (
-              <div
-                style={{
-                  border: "1px solid #E5E7EB",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  backgroundColor: "white",
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                    gap: 16,
-                    padding: "12px 16px",
-                    backgroundColor: "#F3F4F6",
-                    fontWeight: 600,
-                    fontSize: 12,
-                    color: "#6B7280",
-                    borderBottom: "1px solid #E5E7EB",
-                  }}
-                >
-                  <div>{t("menus.dish")}</div>
-                  <div>{t("menus.category")}</div>
-                  <div>{t("menus.price")}</div>
-                  <div>{t("menus.available")}</div>
-                </div>
-
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: 24 }}>
                 {menuItems.length === 0 ? (
-                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#6B7280" }}>
+                  <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "24px 16px", color: "#6B7280" }}>
                     {t("menus.noItemsFound")}
                   </div>
                 ) : (
-                  menuItems.map((item, index) => (
+                  menuItems.map((item) => (
                     <div
                       key={item.id}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                        gap: 16,
-                        padding: "12px 16px",
-                        borderBottom:
-                          index < menuItems.length - 1
-                            ? "1px solid #E5E7EB"
-                            : "none",
-                        alignItems: "center",
-                        backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                        backgroundColor: "white",
+                        borderRadius: 12,
+                        border: "1px solid #E5E7EB",
+                        overflow: "hidden",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        display: "flex",
+                        flexDirection: "column",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                        e.currentTarget.style.transform = "translateY(0)";
                       }}
                     >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>
-                          {item.recipeName}
-                        </p>
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        {item.category}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        €{item.price.toFixed(2)}
-                      </div>
-                      <div>
-                        <span
+                      {/* Image */}
+                      {item.imageUrl ? (
+                        <div
                           style={{
-                            display: "inline-block",
-                            backgroundColor: item.isAvailable ? "#D1FAE5" : "#FEE2E2",
-                            color: item.isAvailable ? "#065F46" : "#991B1B",
-                            padding: "4px 12px",
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 500,
+                            width: "100%",
+                            height: 200,
+                            backgroundColor: "#F3F4F6",
+                            overflow: "hidden",
                           }}
                         >
-                          {item.isAvailable ? t("menus.available") : t("menus.unavailable")}
-                        </span>
+                          <img
+                            src={item.imageUrl}
+                            alt={item.recipeName}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            backgroundColor: "#F3F4F6",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#9CA3AF",
+                            fontSize: 14,
+                          }}
+                        >
+                          {t("common.noImage")}
+                        </div>
+                      )}
+
+                      {/* Content */}
+                      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+                        {/* Name */}
+                        <div>
+                          <h3 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 600, color: "#0F172A" }}>
+                            {item.recipeName}
+                          </h3>
+                          <p style={{ margin: 0, color: "#6B7280", fontSize: 13 }}>
+                            {item.recipeDescription}
+                          </p>
+                        </div>
+
+                        {/* Category & Details */}
+                        <div style={{ display: "flex", gap: 12, fontSize: 12, color: "#6B7280" }}>
+                          <span>{item.category}</span>
+                          <span>•</span>
+                          <span>{item.preparationTime} min</span>
+                          <span>•</span>
+                          <span>{item.portionSizeKg} kg</span>
+                        </div>
+
+                        {/* Price & Availability */}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            paddingTop: 12,
+                            borderTop: "1px solid #E5E7EB",
+                            marginTop: "auto",
+                          }}
+                        >
+                          <span style={{ fontSize: 20, fontWeight: 700, color: "#7C3AED" }}>
+                            €{item.price.toFixed(2)}
+                          </span>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              backgroundColor: item.isAvailable ? "#D1FAE5" : "#FEE2E2",
+                              color: item.isAvailable ? "#065F46" : "#991B1B",
+                              padding: "4px 12px",
+                              borderRadius: 20,
+                              fontSize: 12,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {item.isAvailable ? t("menus.available") : t("menus.unavailable")}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))
