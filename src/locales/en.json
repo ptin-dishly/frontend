@@ -2,7 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "tables": "Tables",
-    "kitchen": "Kitchen",
+    "orders": "Orders",
     "bookings": "Bookings",
     "menus": "Menus",
     "ingredients": "Ingredients",
@@ -185,7 +185,8 @@
     "pending": "Pending",
     "inProgress": "In Progress",
     "ready": "Ready",
-    "completed": "Completed",
+    "confirmed": "Confirmed",
+    "preparing": "Preparing",
     "loading": "Loading orders...",
     "notFound": "No orders found",
     "table": "Table: {{number}}",
@@ -200,6 +201,18 @@
     "markInProgress": "Mark as In Progress",
     "markReady": "Mark as Ready",
     "markCompleted": "Mark as Completed",
+    "kitchenTicket": {
+      "title": "Kitchen",
+      "date": "Date:",
+      "order": "Order #:",
+      "table": "Table:",
+      "status": "Status:",
+      "columnIndex": "#",
+      "columnProduct": "Product",
+      "columnQty": "Qty",
+      "totalItems": "Total: {{count}} items",
+      "printed": "Printed:"
+    },
     "accessDenied": "Access denied. This page is only available for admin and kitchen roles."
   },
   "tables": {

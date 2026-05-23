@@ -26,6 +26,8 @@ export function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LogInPage />} />
+        <Route path="/client/menu" element={<ClientMenuPage />} />
+        <Route path="/client/menu/:menuId" element={<ClientMenuPage />} />
         
         <Route
           path="/dashboard"
@@ -55,7 +57,7 @@ export function AppRoutes() {
         />
         
         <Route
-          path="/kitchen"
+          path="/orders"
           element={
             <ProtectedRoute>
               <OrderPage />
@@ -105,6 +107,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        
 
         <Route
           path="/dishes/new"

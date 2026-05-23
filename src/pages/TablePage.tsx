@@ -147,11 +147,11 @@ export default function TablesPage() {
 
         {selectedTable && (
           <div
-            style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+            style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box", zIndex: 2100 }}
             onClick={() => setSelectedTable(null)}
           >
             <div
-              style={{ backgroundColor: "white", borderRadius: 16, padding: 32, maxWidth: 500, width: "90%" }}
+              style={{ backgroundColor: "white", borderRadius: 16, padding: "24px clamp(20px, 4vw, 32px)", maxWidth: 520, width: "min(100%, 520px)", maxHeight: "calc(100vh - 32px)", overflowY: "auto", boxSizing: "border-box" }}
               onClick={(e) => e.stopPropagation()}
             >
               <h2 style={{ margin: "0 0 20px", color: "#0F172A" }}>
@@ -172,11 +172,11 @@ export default function TablesPage() {
                 )}
               </div>
 
-              <div style={{ display: "flex", gap: 12 }}>
-                <button onClick={() => setSelectedTable(null)} style={{ flex: 1, padding: "12px 16px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+                <button onClick={() => setSelectedTable(null)} style={{ width: "100%", padding: "12px 16px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
                   {t("common.close")}
                 </button>
-                <button style={{ flex: 1, padding: "12px 16px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
+                <button style={{ width: "100%", padding: "12px 16px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
                   {t("tables.manageOrder")}
                 </button>
               </div>

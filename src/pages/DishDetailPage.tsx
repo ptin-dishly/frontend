@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { recipeService, type Recipe, type RecipeIngredientDetail } from "../services/api";
+import { recipeService, recipeStepService, type Recipe, type RecipeIngredientDetail, type RecipeStep } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
 
@@ -25,6 +25,9 @@ export default function DishDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedDish, setEditedDish] = useState<Partial<Recipe> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showStepsModal, setShowStepsModal] = useState(false);
+  const [steps, setSteps] = useState<RecipeStep[]>([]);
+  const [stepsLoading, setStepsLoading] = useState(false);
 
   const fetchDishIngredients = async (recipeId: string) => {
     try {
@@ -111,6 +114,23 @@ export default function DishDetailPage() {
   const handleCancel = () => {
     setEditedDish(dish);
     setIsEditing(false);
+  };
+
+  const handleShowSteps = async () => {
+    if (!id) return;
+    setShowStepsModal(true);
+    setStepsLoading(true);
+    try {
+      const res = await recipeStepService.getByRecipe(id);
+      if (res.success && res.data) {
+        setSteps(res.data.sort((a, b) => a.stepNumber - b.stepNumber));
+      }
+    } catch (err) {
+      console.error("Error fetching recipe steps:", err);
+      setError("Failed to load recipe steps");
+    } finally {
+      setStepsLoading(false);
+    }
   };
 
   if (loading) {
@@ -486,25 +506,27 @@ export default function DishDetailPage() {
 
           <div style={{ display: "flex", gap: 12 }}>
             <button
-              onClick={() => navigate("/dishes")}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#E5E7EB",
-                border: "none",
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: 14,
-              }}
-            >
-              {t("common.back")}
-            </button>
+                onClick={handleShowSteps}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "var(--color-purple)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                📋 {t("Steps")}
+              </button>
+            
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
                 style={{
                   padding: "10px 20px",
-                  backgroundColor: "#7C3AED",
+                  backgroundColor: "var(--color-green)",
                   color: "white",
                   border: "none",
                   borderRadius: 8,
@@ -551,6 +573,112 @@ export default function DishDetailPage() {
               </>
             )}
           </div>
+
+          {/* Recipe Steps Modal */}
+          {showStepsModal && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2400,
+              }}
+              onClick={() => setShowStepsModal(false)}
+            >
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: 12,
+                  padding: 32,
+                  maxWidth: 600,
+                  width: "90%",
+                  maxHeight: "80vh",
+                  overflowY: "auto",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 24px", fontWeight: 700 }}>
+                  {dish?.name} 
+                </h2>
+
+                {stepsLoading ? (
+                  <div style={{ textAlign: "center", padding: "20px", color: "#6B7280" }}>
+                    <p>{t("common.loading") || "Loading steps..."}</p>
+                  </div>
+                ) : steps.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "20px", color: "#6B7280" }}>
+                    <p>{t("dishDetail.noSteps") || "No recipe steps available"}</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {steps.map((step) => (
+                      <div
+                        key={step.id}
+                        style={{
+                          backgroundColor: "#F9FAFB",
+                          padding: 16,
+                          borderRadius: 8,
+                          borderLeft: "4px solid var(--color-purple)",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                          <div
+                            style={{
+                              backgroundColor: "var(--color-purple)",
+                              color: "white",
+                              width: 32,
+                              height: 32,
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {step.stepNumber}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontSize: 14, color: "#0F172A", fontWeight: 500, marginBottom: 8 }}>
+                              {step.instruction}
+                            </p>
+                            {step.duration && (
+                              <p style={{ margin: 0, fontSize: 12, color: "#6B7280" }}>
+                                ⏱️ {step.duration} {t("minutes") }
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowStepsModal(false)}
+                  style={{
+                    marginTop: 24,
+                    padding: "10px 20px",
+                    backgroundColor: "#E5E7EB",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: 14,
+                    width: "100%",
+                  }}
+                >
+                  {t("common.close") || "Close"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

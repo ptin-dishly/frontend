@@ -2,7 +2,7 @@
   "nav": {
     "dashboard": "Tauler",
     "tables": "Taules",
-    "kitchen": "Cuina",
+    "orders": "Ordres",
     "bookings": "Reserves",
     "menus": "Menús",
     "ingredients": "Ingredients",
@@ -185,7 +185,8 @@
     "pending": "Pendent",
     "inProgress": "En procés",
     "ready": "Llest",
-    "completed": "Completat",
+    "confirmed": "Confirmada",
+    "preparing": "Preparant",
     "loading": "Carregant comandes...",
     "notFound": "No s'han trobat comandes",
     "table": "Taula: {{number}}",
@@ -200,6 +201,18 @@
     "markInProgress": "Marcar com a En Procés",
     "markReady": "Marcar com a Llest",
     "markCompleted": "Marcar com a Completat",
+    "kitchenTicket": {
+      "title": "Cuina",
+      "date": "Data:",
+      "order": "Comanda #:",
+      "table": "Taula:",
+      "status": "Estat:",
+      "columnIndex": "#",
+      "columnProduct": "Producte",
+      "columnQty": "Quant.",
+      "totalItems": "Total: {{count}} articles",
+      "printed": "Imprès:"
+    },
     "accessDenied": "Accés denegat. Aquesta pàgina només està disponible per als rols administrador i cuina."
   },
   "tables": {
