@@ -16,6 +16,25 @@ body {
   --color-dark-blue: #0F172A;
   --color-green: #22C55E;
   --color-gray: #6B7280;
+
+  /* Semantic status colors — operational states only */
+  --status-available: #22C55E;
+  --status-pending: #F59E0B;
+  --status-occupied: #3B82F6;
+  --status-reserved: #F59E0B;
+  --status-in-progress: #3B82F6;
+  --status-ready: #22C55E;
+  --status-cancelled: #EF4444;
+  --status-confirmed: #22C55E;
+
+  /* Semantic action colors — interactive elements only */
+  --action-primary: #7C3AED;
+  --action-primary-hover: #6D28D9;
+  --action-danger: #EF4444;
+  --action-danger-hover: #DC2626;
+  --action-secondary-bg: #E5E7EB;
+  --action-secondary-text: #0F172A;
+  --color-purple-hover: #6D28D9;
 }
 
 body.has-fixed-menubar #root {
