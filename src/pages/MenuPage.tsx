@@ -383,7 +383,7 @@ export default function MenusPage() {
                     </div>
 
                     <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>
-                      {t("menus.created")} {new Date(menu.createdAt).toLocaleDateString()}
+                      {t("menus.createdAt", { date: new Date(menu.createdAt).toLocaleDateString() })}
                     </p>
 
                     {menusWithAllergens[menu.id] && menusWithAllergens[menu.id].length > 0 && (
@@ -400,21 +400,36 @@ export default function MenusPage() {
                       </div>
                     )}
 
-                    <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+                    <div style={{ display: "flex", gap: 8, marginTop: "auto" }} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => openMenuDetail(menu)}
+                        style={{
+                          flex: 1,
+                          padding: "8px 12px",
+                          backgroundColor: "#7C3AED",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {t("common.view")}
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteMenu(menu.id);
                         }}
                         style={{
-                          flex: 1,
                           padding: "8px 12px",
-                          backgroundColor: "#EF4444",
-                          color: "white",
-                          border: "none",
+                          backgroundColor: "transparent",
+                          color: "#EF4444",
+                          border: "1px solid #EF4444",
                           borderRadius: 6,
                           cursor: "pointer",
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: 600,
                         }}
                       >
