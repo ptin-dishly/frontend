@@ -103,9 +103,9 @@ export default function UserProfile() {
         type="button"
         style={{
           padding: "6px 10px",
-          backgroundColor: "rgba(239, 68, 68, 0.8)",
+          backgroundColor: "transparent",
           color: "#FFFFFF",
-          border: "none",
+          border: "1px solid rgba(255, 255, 255, 0.35)",
           borderRadius: "6px",
           fontSize: "11px",
           fontWeight: 600,
@@ -114,8 +114,14 @@ export default function UserProfile() {
           minWidth: "fit-content",
           whiteSpace: "nowrap",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#DC2626")}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.8)")}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.12)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.6)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.35)";
+        }}
       >
         {t("logout")}
       </button>
