@@ -7,6 +7,8 @@ import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
 import { GiCardboardBoxClosed } from "react-icons/gi";
 import { BsForkKnife } from "react-icons/bs";
 import { MdMenuBook, MdOutlineDinnerDining } from "react-icons/md";
+import { HiOutlineQrCode } from "react-icons/hi2";
+import QRCode from "react-qr-code";
 import Logo from "./Logo";
 import UserProfile from "./UserProfile";
 import LanguageSelector from "./LanguageSelector";
@@ -52,7 +54,6 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
       { label: t("nav.dishes"), route: "/dishes", icon: MdOutlineDinnerDining },
     ],
     kitchen: [
-     
       { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
       { label: t("nav.dishes"), route: "/dishes", icon: MdOutlineDinnerDining },
     ],
@@ -183,44 +184,57 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
           overflow: "hidden",
         }}
       >
-        {items.map((item) => {
-          const ItemIcon = item.icon;
-          const isActive = activePath === item.route;
-          const isHovered = hovered === item.route;
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
+          <Logo />
+        </div>
 
-          return (
-            <button
-              key={item.route}
-              type="button"
-              onMouseEnter={() => setHovered(item.route)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => navigate(item.route)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "14px",
-                border: "none",
-                background: isActive ? "var(--color-white)" : isHovered ? "rgba(255,255,255,0.10)" : "transparent",
-                color: isActive || isHovered ? "var(--color-purple)" : "white",
-                cursor: "pointer",
-                transition: "background 0.2s, color 0.2s",
-                textAlign: "left",
-                fontWeight: isActive ? 600 : 400,
-                fontSize: "16px",
-              }}
-              title={item.label}
-            >
-              <ItemIcon size={20} color={isActive || isHovered ? "var(--color-purple)" : "white"} />
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            minHeight: 0,
+          }}
+        >
+          {items.map((item) => {
+            const ItemIcon = item.icon;
+            const isActive = activePath === item.route;
+            const isHovered = hovered === item.route;
+
+            return (
+              <button
+                key={item.route}
+                type="button"
+                onMouseEnter={() => setHovered(item.route)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => navigate(item.route)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "14px",
+                  border: "none",
+                  background: isActive ? "var(--color-white)" : isHovered ? "rgba(255,255,255,0.10)" : "transparent",
+                  color: isActive || isHovered ? "var(--color-purple)" : "white",
+                  cursor: "pointer",
+                  transition: "background 0.2s, color 0.2s",
+                  textAlign: "left",
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: "16px",
+                }}
+                title={item.label}
+              >
+                <ItemIcon size={20} color={isActive || isHovered ? "var(--color-purple)" : "white"} />
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <div style={{ marginTop: "auto" }}>
           <LanguageSelector />
