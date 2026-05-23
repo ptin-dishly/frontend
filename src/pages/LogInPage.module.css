@@ -3,9 +3,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(to bottom, #f0eef8 0%, #f0eef8 38%, #0d0c1a 38%, #0d0c1a 100%);
+  background-color: #0d0c1a;
   padding: 48px 16px 64px;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Commissioner', sans-serif;
 }
 
 .logo {
@@ -41,11 +41,7 @@
 }
 
 .divider_line {
-  width: 60px;
-  height: 2px;
-  background: #6c5ce7;
-  border-radius: 2px;
-  margin: 10px auto 28px;
+  display: none;
 }
 
 .error_box {
@@ -129,7 +125,7 @@
 
 .submit_btn {
   width: 100%;
-  background: #2dd36f;
+  background: #7C3AED;
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -144,7 +140,7 @@
 }
 
 .submit_btn:hover:not(:disabled) {
-  background: #26bc61;
+  background: #6D28D9;
 }
 
 .submit_btn:active:not(:disabled) {

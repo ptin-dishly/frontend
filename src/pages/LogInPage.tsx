@@ -9,8 +9,8 @@ import login_style from "./LogInPage.module.css";
 export default function LogIn() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [email, setEmail] = useState("marc@calblay.cat");
-  const [password, setPassword] = useState("secret123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,9 +77,7 @@ export default function LogIn() {
       <img src={logoII} alt="Logo" className={login_style.logo} />
 
       <div className={login_style.panel}>
-        <h2 className={login_style.title}>Log In</h2>
-        <p className={login_style.subtitle}>Bienvenido! Por favor introduzca sus datos para poder continuar.</p>
-        <div className={login_style.divider_line} />
+        <h2 className={login_style.title}>{t("auth.title")}</h2>
 
         {error && (
           <div className={login_style.error_box}>
