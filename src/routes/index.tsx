@@ -16,10 +16,10 @@ import AllComponents from "../pages/AllComponents";
 import MenuCreatePage from "../pages/MenuCreatePage";
 
 
-export const ESTABLISHMENTS = {
-  "ca-la-maria": "22222222-0002-0002-0002-000000000001",
-  "el-raco": "22222222-0002-0002-0002-000000000002",
-}
+export const ESTABLISHMENTS: Record<string, { id: string; name: string }> = {
+  "ca-la-maria": { id: "22222222-0002-0002-0002-000000000001", name: "Ca la Maria" },
+  "el-raco":     { id: "22222222-0002-0002-0002-000000000002", name: "El Racó" },
+};
 
 export function AppRoutes() {
   return (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { menuService, allergenService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import { ESTABLISHMENTS } from "../routes/index";
@@ -28,8 +28,10 @@ interface MenuItemWithAllergens extends MenuItem {
 
 export default function PublicMenuPage() {
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
-  const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const establishment = ESTABLISHMENTS[restaurantSlug || ""];
+  const restaurantName = establishment?.name ?? restaurantSlug ?? "";
 
   const allergenImageMap: Record<string, string> = {
     "GLU": glutenImg,
@@ -74,8 +76,8 @@ export default function PublicMenuPage() {
       setError(null);
 
       // Obtener establishment ID del slug
-      const establishmentId = (ESTABLISHMENTS as Record<string, string>)[restaurantSlug || ""];
-      
+      const establishmentId = establishment?.id;
+
       if (!establishmentId) {
         setError(`Restaurant "${restaurantSlug}" not found`);
         setLoading(false);
