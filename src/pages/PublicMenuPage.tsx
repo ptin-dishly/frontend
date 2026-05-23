@@ -4,6 +4,28 @@ import { useTranslation } from "react-i18next";
 import { menuService, allergenService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import { ESTABLISHMENTS } from "../routes/index";
 
+import glutenImg from "../assets/gluten.png";
+import crustaceansImg from "../assets/crustaceans.png";
+import eggImg from "../assets/egg.png";
+import fishImg from "../assets/fish.png";
+import peanutsImg from "../assets/peanuts.png";
+import soybeansImg from "../assets/soybeans.png";
+import milkImg from "../assets/milk.png";
+import treeNutsImg from "../assets/tree-nuts.png";
+import celeryImg from "../assets/celery.png";
+import mustardImg from "../assets/mustard.png";
+import sesameImg from "../assets/sesame.png";
+import sulphitesImg from "../assets/sulphites.png";
+import lupinsImg from "../assets/lupins.png";
+import molluscsImg from "../assets/molluscs.png";
+
+const ALLERGEN_ICONS: Record<string, string> = {
+  GLU: glutenImg, CRU: crustaceansImg, HUE: eggImg, PES: fishImg,
+  CAC: peanutsImg, SOJ: soybeansImg, LAC: milkImg, FRU: treeNutsImg,
+  API: celeryImg, MOS: mustardImg, SES: sesameImg, SUL: sulphitesImg,
+  ALT: lupinsImg, MOL: molluscsImg,
+};
+
 interface MenuItemWithAllergens extends MenuItem {
   allergens?: Allergen[];
 }
@@ -194,15 +216,20 @@ export default function PublicMenuPage() {
                           active ? prev.filter((id) => id !== a.id) : [...prev, a.id]
                         )
                       }
+                      title={a.nameEs}
                       style={{
                         background: active ? "#78350F" : "#F3E8D0",
-                        color: active ? "white" : "#78350F",
-                        border: "none", borderRadius: 20,
-                        padding: "3px 10px", fontSize: 10,
-                        fontWeight: 600, cursor: "pointer",
+                        border: active ? "2px solid #78350F" : "2px solid transparent",
+                        borderRadius: 8, padding: "4px 6px",
+                        cursor: "pointer", display: "flex",
+                        alignItems: "center", gap: 4,
+                        opacity: active ? 1 : 0.75,
                       }}
                     >
-                      {a.code}
+                      {ALLERGEN_ICONS[a.code]
+                        ? <img src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} style={{ width: 20, height: 20, objectFit: "contain", filter: active ? "brightness(0) invert(1)" : "none" }} />
+                        : <span style={{ fontSize: 10, fontWeight: 700, color: active ? "white" : "#78350F" }}>{a.code}</span>
+                      }
                     </button>
                   );
                 })}
@@ -262,13 +289,9 @@ export default function PublicMenuPage() {
                       {menuAllergens.length > 0 && (
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                           {menuAllergens.map((a) => (
-                            <span key={a.id} style={{
-                              background: "#FEF3C7", color: "#92400E",
-                              borderRadius: 4, padding: "2px 6px",
-                              fontSize: 9, fontWeight: 700,
-                            }}>
-                              {a.code}
-                            </span>
+                            ALLERGEN_ICONS[a.code]
+                              ? <img key={a.id} src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} title={a.nameEs} style={{ width: 20, height: 20, objectFit: "contain" }} />
+                              : <span key={a.id} style={{ background: "#FEF3C7", color: "#92400E", borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700 }}>{a.code}</span>
                           ))}
                         </div>
                       )}
@@ -369,13 +392,9 @@ export default function PublicMenuPage() {
                       {item.allergens && item.allergens.length > 0 && (
                         <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
                           {item.allergens.map((a) => (
-                            <span key={a.id} style={{
-                              background: "#FEF3C7", color: "#92400E",
-                              borderRadius: 4, padding: "2px 6px",
-                              fontSize: 9, fontWeight: 700,
-                            }}>
-                              {a.code}
-                            </span>
+                            ALLERGEN_ICONS[a.code]
+                              ? <img key={a.id} src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} title={a.nameEs} style={{ width: 18, height: 18, objectFit: "contain" }} />
+                              : <span key={a.id} style={{ background: "#FEF3C7", color: "#92400E", borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700 }}>{a.code}</span>
                           ))}
                         </div>
                       )}
