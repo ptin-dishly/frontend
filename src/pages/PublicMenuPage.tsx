@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { menuService, allergenService, type Menu, type MenuItem, type Allergen } from "../services/api";
@@ -47,9 +47,7 @@ export default function PublicMenuPage() {
 
       try {
         // Obtener menus
-        const [menusRes] = await Promise.all([
-          menuService.getByEstablishment(establishmentId),
-        ]);
+        const menusRes = await menuService.getByEstablishment(establishmentId);
 
         if (menusRes.success && menusRes.data) {
           setMenus(menusRes.data);
@@ -76,8 +74,6 @@ export default function PublicMenuPage() {
         } else {
           setError("No menus found for this restaurant");
         }
-
-
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to load restaurant menu");
@@ -127,18 +123,23 @@ export default function PublicMenuPage() {
     setView("detail");
   };
 
-  if (view === "list") {
-    const filteredMenus = menus.filter((menu) => {
+  const filteredMenus = useMemo(() => {
+    if (view !== "list") return [];
+    return menus.filter((menu) => {
       const menuAllergenIds = (menusWithAllergens[menu.id] || []).map((a) => a.id);
       return !excludedAllergenIds.some((id) => menuAllergenIds.includes(id));
     });
+  }, [menus, menusWithAllergens, excludedAllergenIds, view]);
 
-    const allergenPool = Array.from(
+  const allergenPool = useMemo(() => {
+    return Array.from(
       new Map(
         Object.values(menusWithAllergens).flat().map((a) => [a.id, a])
       ).values()
     );
+  }, [menusWithAllergens]);
 
+  if (view === "list") {
     return (
       <div style={{ background: "#FFFBF5", minHeight: "100vh" }}>
         <div style={{ maxWidth: 600, margin: "0 auto" }}>
@@ -154,7 +155,7 @@ export default function PublicMenuPage() {
               fontFamily: "Georgia, serif",
               textTransform: "uppercase", margin: "0 0 6px",
             }}>
-              Benvinguts a
+              {t("menus.welcomeTo")}
             </p>
             <h1 style={{
               fontSize: 26, fontWeight: 800, color: "#1C1917",
@@ -166,7 +167,7 @@ export default function PublicMenuPage() {
               fontSize: 11, color: "#78716C", fontStyle: "italic",
               fontFamily: "Georgia, serif", margin: 0,
             }}>
-              Cuina catalana de mercat
+              {t("menus.tagline")}
             </p>
           </div>
 
@@ -234,7 +235,10 @@ export default function PublicMenuPage() {
                 return (
                   <div
                     key={menu.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => openMenuDetail(menu)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openMenuDetail(menu); }}
                     style={{
                       background: "white", borderRadius: 10,
                       border: "1px solid #F3E8D0",

@@ -84,7 +84,9 @@
     "noItems": "No se han encontrado artículos",
     "available": "Disponible",
     "unavailable": "No disponible",
-    "deleteConfirm": "¿Estás seguro de que quieres eliminar este menú?"
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este menú?",
+    "welcomeTo": "Bienvenidos a",
+    "tagline": "Cocina de mercado"
   },
   "dishes": {
     "title": "Platos",

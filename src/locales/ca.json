@@ -84,7 +84,9 @@
     "noItems": "No s'han trobat articles",
     "available": "Disponible",
     "unavailable": "No disponible",
-    "deleteConfirm": "Estàs segur que vols eliminar aquest menú?"
+    "deleteConfirm": "Estàs segur que vols eliminar aquest menú?",
+    "welcomeTo": "Benvinguts a",
+    "tagline": "Cuina catalana de mercat"
   },
   "dishes": {
     "title": "Plats",
