@@ -155,11 +155,10 @@ export const sessionService = {
 
 export interface User {
   id: string;
-  establishmentId: string;
+  establishmentId?: string;
   name: string;
   email: string;
   role: string;
-  establishmentId?: string;
   isActive: boolean;
   createdAt: string;
 }

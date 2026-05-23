@@ -14,7 +14,7 @@ import BookingsPage from "../pages/BookingPage";
 import RecipeCreatePage from "../pages/DishCreatePage";
 import AllComponents from "../pages/AllComponents";
 import MenuCreatePage from "../pages/MenuCreatePage";
-
+import ClientMenuPage from "../pages/ClientMenuPage";
 
 export const ESTABLISHMENTS: Record<string, { id: string; name: string }> = {
   "ca-la-maria": { id: "22222222-0002-0002-0002-000000000001", name: "Ca la Maria" },

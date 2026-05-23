@@ -8,10 +8,10 @@ interface KitchenTicketProps {
 
 export default function KitchenTicket({ order }: KitchenTicketProps) {
   const { t } = useTranslation();
-  const statusKeyMap: Record<Order["status"], "pending" | "inProgress" | "ready" | "completed"> = {
+  const statusKeyMap: Record<Order["status"], string> = {
     pending: "pending",
-    in_progress: "inProgress",
-    ready: "ready",
+    confirmed: "confirmed",
+    cancelled: "cancelled",
     completed: "completed",
   };
 
@@ -99,7 +99,7 @@ export default function KitchenTicket({ order }: KitchenTicketProps) {
         <span><strong>{t("orders.kitchenTicket.date")}</strong> {new Date(order.createdAt).toLocaleString()}</span>
       </div>
       <div className="ticket-row">
-        <span><strong>{t("orders.kitchenTicket.order")}</strong> {order.orderNumber}</span>
+        <span><strong>{t("orders.kitchenTicket.order")}</strong> #{order.id.replace(/-/g, "").slice(-8).toUpperCase()}</span>
         <span><strong>{t("orders.kitchenTicket.table")}</strong> {order.tableNumber}</span>
       </div>
       <div className="ticket-row">
@@ -119,7 +119,7 @@ export default function KitchenTicket({ order }: KitchenTicketProps) {
         </thead>
         <tbody>
           {order.items.map((item, index) => (
-            <tr key={item.id}>
+            <tr key={index}>
               <td>{index + 1}</td>
               <td>{item.name.toUpperCase()}</td>
               <td>{item.quantity}</td>
