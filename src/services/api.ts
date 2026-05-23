@@ -155,6 +155,7 @@ export const sessionService = {
 
 export interface User {
   id: string;
+  establishmentId: string;
   name: string;
   email: string;
   role: string;
@@ -269,7 +270,7 @@ export const ingredientService = {
 
 export interface Recipe {
   id: string;
-  establishment_id: string;
+  establishmentId: string;
   name: string;
   description: string | null;
   category: string;
@@ -277,9 +278,20 @@ export interface Recipe {
   servings: number;
   preparationTime: number;
   version: number;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  imageUrl?: string;
+}
+
+// Un solo tipo para crear recetas (con o sin ingredientes)
+export interface CreateRecipePayload extends Omit<Recipe, "id" | "createdAt" | "updatedAt" | "version"> {
+  ingredients?: Array<{
+    ingredientId: string;
+    quantity: number;
+    unit: string;
+    isOptional?: boolean;
+  }>;
 }
 
 export interface RecipeIngredientDetail {
@@ -296,21 +308,26 @@ export interface RecipeIngredientDetail {
 export const recipeService = {
   getAll: () => api<Recipe[]>("/recipes"),
   getAllWithAllergens: () => api<any[]>("/recipes/with-allergens"),
+  getByEstablishment: (establishmentId: string) => api<Recipe[]>(`/recipes/establishment/${establishmentId}`),
   getById: (id: string) => api<Recipe>(`/recipes/${id}`),
   getIngredients: (recipeId: string) =>
     api<RecipeIngredientDetail[]>(`/recipes/${recipeId}/ingredients`),
   getByAllergen: (allergenId: string) =>
     api<Recipe[]>(`/recipes/allergens/${allergenId}`),
-  create: (data: Omit<Recipe, "id" | "created_at" | "updated_at" | "created_by" | "version">) =>
+  
+  // UN SOLO endpoint para crear (con o sin ingredientes)
+  create: (data: CreateRecipePayload) =>
     api<Recipe>("/recipes", {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  
   update: (id: string, data: Partial<Recipe>) =>
     api<Recipe>(`/recipes/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  
   delete: (id: string) =>
     api<void>(`/recipes/${id}`, {
       method: "DELETE",
@@ -347,7 +364,18 @@ export interface MenuItem {
   version: number;
   establishmentId: string;
   createdBy: string;
+  imageUrl?: string;
   ingredients?: RecipeIngredientDetail[];
+}
+
+// Nuevo tipo para crear menús CON items
+export interface CreateMenuPayload extends Omit<Menu, "id" | "createdAt" | "updatedAt"> {
+  items: Array<{
+    recipeId: string;
+    price: number;
+    displayOrder: number;
+    isAvailable: boolean;
+  }>;
 }
 
 export const menuService = {
@@ -355,19 +383,23 @@ export const menuService = {
   getByEstablishment: (establishmentId: string) =>
     api<Menu[]>(`/menus/establishment/${establishmentId}`),
   getById: (id: string) => api<Menu>(`/menus/${id}`),
-  getItems: () => api<MenuItem[]>("/menu-card-items"), // ← Cambiar de /menus/items a /menu-card-items
+  getItems: () => api<MenuItem[]>("/menu-card-items"),
   getByAllergen: (allergenId: string) =>
     api<Menu[]>(`/menus/allergen/${allergenId}`),
-  create: (data: Partial<Menu>) =>
+  
+  // Actualizado para aceptar CreateMenuPayload (con o sin items)
+  create: (data: CreateMenuPayload | Omit<Menu, "id" | "createdAt" | "updatedAt">) =>
     api<Menu>("/menus", {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  
   update: (id: string, data: Partial<Menu>) =>
     api<Menu>(`/menus/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  
   delete: (id: string) =>
     api<void>(`/menus/${id}`, {
       method: "DELETE",

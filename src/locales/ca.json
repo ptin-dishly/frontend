@@ -9,6 +9,7 @@
     "dishes": "Plats"
   },
   "common": {
+    "noImage": "Sense imatge",
     "save": "Guardar",
     "saving": "Guardant...",
     "cancel": "Cancel·lar",
@@ -118,24 +119,32 @@
   },
   "dishCreate": {
     "title": "Crear Nova Recepta",
+    "imageUrl": "URL de la imatge",
     "backToDishes": "Tornar als Plats",
-    "recipeName": "Nom de la recepta *",
-    "recipeNamePlaceholder": "ex., Lasanya de carn",
+    "name": "Nom de la recepta *",
+    "namePlaceholder": "ex., Lasanya de carn",
     "description": "Descripció",
     "descriptionPlaceholder": "ex., Deliciosa lasanya casolana...",
     "category": "Categoria *",
     "portionSize": "Mida de ració (kg) *",
     "servings": "Racions *",
     "prepTime": "Temps de preparació (minuts) *",
+    "ingredient": "Ingredient",
+    "ingredientPlaceholder": "Cercar ingredient...",
+    "quantity": "Quantitat",
+    "unit": "Unitat",
+    "optional": "Opt.",
+    "addIngredient": "+ Afegir",
+    "ingredients": "Ingredients",
     "createButton": "Crear Recepta",
     "creating": "Creant...",
     "categories": {
-      "starter": "Entrant",
-      "firstCourse": "Primer Plat",
-      "secondCourse": "Segon Plat",
-      "dessert": "Postres",
-      "sauce": "Salsa",
-      "drink": "Beguda"
+      "entrante": "Entrant",
+      "primer_plato": "Primer Plat",
+      "segundo_plato": "Segon Plat",
+      "postre": "Postres",
+      "salsa": "Salsa",
+      "bebida": "Beguda"
     }
   },
   "ingredients": {
@@ -250,5 +259,27 @@
   "clearAll": "Netejar tot",
   "title": "Al·lèrgens",
   "noAllergens": "Sense al·lèrgens"
+  },
+  "menuCreate": {
+    "title": "Crear Nou Menú",
+    "backToMenus": "Tornar als Menús",
+    "name": "Nom del menú *",
+    "namePlaceholder": "ex., Menú de Dinar",
+    "isPublic": "Menú públic",
+    "isPublicDescription": "Visible en el codi QR",
+    "recipe": "Plat",
+    "recipePlaceholder": "Cercar plat...",
+    "price": "Preu",
+    "pricePlaceholder": "0.00",
+    "suggestedPrice": "Preu suggerit:",
+    "noHistory": "Sense historial",
+    "displayOrder": "Ordre",
+    "available": "Disponible",
+    "addItem": "+ Afegir",
+    "items": "Plats del Menú",
+    "menuItems": "Plats afegits",
+    "createButton": "Crear Menú",
+    "creating": "Creant...",
+    "noItemsAdded": "Sense plats afegits encara"
   }
 }
