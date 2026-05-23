@@ -86,7 +86,10 @@
     "unavailable": "No disponible",
     "deleteConfirm": "¿Estás seguro de que quieres eliminar este menú?",
     "welcomeTo": "Bienvenidos a",
-    "tagline": "Cocina de mercado"
+    "tagline": "Cocina de mercado",
+    "restaurantNotFound": "Restaurante no encontrado",
+    "noMenusFound": "No hay menús disponibles para este restaurante",
+    "loadError": "Error al cargar el menú"
   },
   "dishes": {
     "title": "Platos",

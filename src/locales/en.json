@@ -86,7 +86,10 @@
     "unavailable": "Unavailable",
     "deleteConfirm": "Are you sure you want to delete this menu?",
     "welcomeTo": "Welcome to",
-    "tagline": "Market cuisine"
+    "tagline": "Market cuisine",
+    "restaurantNotFound": "Restaurant not found",
+    "noMenusFound": "No menus available for this restaurant",
+    "loadError": "Failed to load menu"
   },
   "dishes": {
     "title": "Dishes",

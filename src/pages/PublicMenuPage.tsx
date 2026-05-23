@@ -40,7 +40,7 @@ export default function PublicMenuPage() {
       const establishmentId = establishment?.id;
 
       if (!establishmentId) {
-        setError(`Restaurant "${restaurantSlug}" not found`);
+        setError(t("menus.restaurantNotFound"));
         setLoading(false);
         return;
       }
@@ -50,7 +50,7 @@ export default function PublicMenuPage() {
         const menusRes = await menuService.getByEstablishment(establishmentId);
 
         if (menusRes.success && menusRes.data) {
-          setMenus(menusRes.data);
+          setMenus(menusRes.data.filter((m) => m.isPublic));
 
           // Enriquecer menus con alérgenos
           if (menusRes.data.length > 0) {
@@ -72,11 +72,11 @@ export default function PublicMenuPage() {
             setMenusWithAllergens(results);
           }
         } else {
-          setError("No menus found for this restaurant");
+          setError(t("menus.noMenusFound"));
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to load restaurant menu");
+        setError(t("menus.loadError"));
       } finally {
         setLoading(false);
       }
@@ -181,7 +181,7 @@ export default function PublicMenuPage() {
               display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
             }}>
               <span style={{ fontSize: 11, color: "#92400E", fontWeight: 600, whiteSpace: "nowrap" }}>
-                Excloure:
+                {t("dishes.excludeAllergen")}
               </span>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {allergenPool.map((a) => {
@@ -385,7 +385,7 @@ export default function PublicMenuPage() {
               </div>
             ))}
 
-            {menuItems.length === 0 && (
+            {!detailLoading && CATEGORY_ORDER.every((cat) => !grouped[cat]?.length) && (
               <p style={{ color: "#78716C", padding: "24px 16px", textAlign: "center", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
                 {t("menus.noItems")}
               </p>
