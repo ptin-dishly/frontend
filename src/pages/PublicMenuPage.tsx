@@ -139,6 +139,8 @@ export default function PublicMenuPage() {
     );
   }, [menusWithAllergens]);
 
+  const CATEGORY_ORDER = ["entrante", "primer_plato", "segundo_plato", "postre", "salsa", "bebida"];
+
   if (view === "list") {
     return (
       <div style={{ background: "#FFFBF5", minHeight: "100vh" }}>
@@ -283,148 +285,114 @@ export default function PublicMenuPage() {
   }
 
   // Detail view
+  const grouped = menuItems.reduce<Record<string, MenuItemWithAllergens[]>>((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {});
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
-      <main style={{ flex: 1, padding: "40px 48px" }}>
-        <button
-          onClick={() => setView("list")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            backgroundColor: "transparent",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 600,
-            color: "#0F172A",
-            marginBottom: 20,
-          }}
-        >
-          <span style={{ fontSize: 20 }}>←</span>
-          {t("menus.backToMenus")}
-        </button>
+    <div style={{ background: "#FFFBF5", minHeight: "100vh" }}>
+      <div style={{ maxWidth: 600, margin: "0 auto" }}>
 
-        <div style={{ marginTop: 24, maxWidth: 900 }}>
-          <div style={{ marginBottom: 32 }}>
-            <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>
-              {selectedMenu?.name}
-            </h1>
-            <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>
-              {selectedMenu?.isPublic ? "🌍 " + t("menus.public") : "🔒 " + t("menus.private")}
-            </p>
-          </div>
+        {/* Detail header */}
+        <div style={{ borderBottom: "2px solid #D6C4A0", padding: "14px 16px 0" }}>
+          <button
+            onClick={() => setView("list")}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              fontSize: 12, color: "#78350F", fontWeight: 600,
+              background: "transparent", border: "none", cursor: "pointer",
+              marginBottom: 10, padding: 0,
+            }}
+          >
+            ← {t("menus.backToMenus")}
+          </button>
+          <h1 style={{
+            fontSize: 20, fontWeight: 800, color: "#1C1917",
+            fontFamily: "Georgia, serif", margin: "0 0 12px",
+          }}>
+            {selectedMenu?.name}
+          </h1>
+        </div>
 
-          {/* Menu Items Section */}
-          <div>
-            <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 16px", fontWeight: 600 }}>
-              {t("menus.menuItems")}
-            </h2>
+        {/* Loading */}
+        {detailLoading && (
+          <p style={{ color: "#78716C", padding: "32px 20px", textAlign: "center", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+            {t("menus.loadingItems")}
+          </p>
+        )}
 
-            {detailLoading ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
-                <p>{t("menus.loadingItems")}</p>
-              </div>
-            ) : (
-              <div
-                style={{
-                  border: "1px solid #E5E7EB",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  backgroundColor: "white",
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                    gap: 16,
-                    padding: "12px 16px",
-                    backgroundColor: "#F3F4F6",
-                    fontWeight: 600,
-                    fontSize: 12,
-                    color: "#6B7280",
-                    borderBottom: "1px solid #E5E7EB",
-                  }}
-                >
-                  <div>{t("menus.dish")}</div>
-                  <div>{t("menus.category")}</div>
-                  <div>{t("menus.price")}</div>
-                  <div>{t("menus.available")}</div>
-                </div>
+        {/* Category sections */}
+        {!detailLoading && (
+          <div style={{ paddingBottom: 32 }}>
+            {CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0).map((cat) => (
+              <div key={cat} style={{ padding: "16px 16px 0" }}>
 
-                {menuItems.length === 0 ? (
-                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#6B7280" }}>
-                    {t("menus.noItemsFound")}
-                  </div>
-                ) : (
-                  menuItems.map((item, index) => (
+                {/* Category label */}
+                <p style={{
+                  fontSize: 9, fontWeight: 700, color: "#92400E",
+                  letterSpacing: 3, textAlign: "center",
+                  borderBottom: "1px solid #F3E8D0",
+                  paddingBottom: 8, margin: "0 0 8px",
+                  fontFamily: "Georgia, serif",
+                  textTransform: "uppercase",
+                }}>
+                  {t(`dishCreate.categories.${cat}`, { defaultValue: cat })}
+                </p>
+
+                {/* Dish rows */}
+                {grouped[cat].map((item, idx) => {
+                  const isLast = idx === grouped[cat].length - 1;
+                  return (
                     <div
                       key={item.id}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                        gap: 16,
-                        padding: "12px 16px",
-                        borderBottom:
-                          index < menuItems.length - 1
-                            ? "1px solid #E5E7EB"
-                            : "none",
-                        alignItems: "center",
-                        backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                        borderBottom: isLast ? "none" : "1px dotted #D6C4A0",
+                        paddingBottom: isLast ? 0 : 10,
+                        marginBottom: isLast ? 0 : 10,
                       }}
                     >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1917", fontFamily: "Georgia, serif", flex: 1 }}>
                           {item.recipeName}
-                        </p>
-                        {/* Show allergen badges */}
-                        {item.allergens && item.allergens.length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                            {item.allergens.map((allergen) => (
-                              <span
-                                key={allergen.id}
-                                title={allergen.nameEs}
-                                style={{
-                                  background: "#FEF3C7", color: "#92400E",
-                                  borderRadius: 4, padding: "1px 5px",
-                                  fontSize: 9, fontWeight: 700,
-                                }}
-                              >
-                                {allergen.code}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        {item.category}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        €{item.price.toFixed(2)}
-                      </div>
-                      <div>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            backgroundColor: item.isAvailable ? "#D1FAE5" : "#FEE2E2",
-                            color: item.isAvailable ? "#065F46" : "#991B1B",
-                            padding: "4px 12px",
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {item.isAvailable ? t("menus.available") : t("menus.unavailable")}
+                        </span>
+                        <span style={{ fontSize: 13, color: "#78350F", fontWeight: 700, whiteSpace: "nowrap", marginLeft: 12 }}>
+                          {item.price.toFixed(2)}€
                         </span>
                       </div>
+                      {item.recipeDescription && (
+                        <p style={{ fontSize: 11, color: "#78716C", fontStyle: "italic", fontFamily: "Georgia, serif", margin: "3px 0 0" }}>
+                          {item.recipeDescription}
+                        </p>
+                      )}
+                      {item.allergens && item.allergens.length > 0 && (
+                        <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
+                          {item.allergens.map((a) => (
+                            <span key={a.id} style={{
+                              background: "#FEF3C7", color: "#92400E",
+                              borderRadius: 4, padding: "2px 6px",
+                              fontSize: 9, fontWeight: 700,
+                            }}>
+                              {a.code}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
+            ))}
+
+            {menuItems.length === 0 && (
+              <p style={{ color: "#78716C", padding: "24px 16px", textAlign: "center", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+                {t("menus.noItems")}
+              </p>
             )}
           </div>
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   );
 }
