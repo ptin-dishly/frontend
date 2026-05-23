@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { menuService, allergenService, userService, recipeService, type Menu, type MenuItem, type Allergen} from "../services/api";
+import { menuService, allergenService, userService, recipeService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import AllergenMultiFilter from "../components/AllergenMultiFilter";
@@ -291,22 +291,25 @@ export default function MenusPage() {
               />
             </div>
 
-            <button
-              onClick={() => navigate("/menus/new")}
-              style={{
-                backgroundColor: "var(--color-green)",
-                color: "white",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {t("menus.newMenu")}
-            </button>
+            {/* Botón crear menú - SOLO PARA ADMIN */}
+            {userRole === "admin" && (
+              <button
+                onClick={() => navigate("/menus/new")}
+                style={{
+                  backgroundColor: "var(--color-green)",
+                  color: "white",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("menus.newMenu")}
+              </button>
+            )}
           </div>
 
           <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
@@ -383,7 +386,7 @@ export default function MenusPage() {
                     </div>
 
                     <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>
-                      {t("menus.createdAt", { date: new Date(menu.createdAt).toLocaleDateString() })}
+                      {t("menus.createdAt")} {new Date(menu.createdAt).toLocaleDateString()}
                     </p>
 
                     {menusWithAllergens[menu.id] && menusWithAllergens[menu.id].length > 0 && (
@@ -417,24 +420,28 @@ export default function MenusPage() {
                       >
                         {t("common.view")}
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteMenu(menu.id);
-                        }}
-                        style={{
-                          padding: "8px 12px",
-                          backgroundColor: "transparent",
-                          color: "#EF4444",
-                          border: "1px solid #EF4444",
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {t("common.delete")}
-                      </button>
+
+                      {/* Botón eliminar - SOLO ADMIN */}
+                      {userRole === "admin" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMenu(menu.id);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            backgroundColor: "transparent",
+                            color: "#EF4444",
+                            border: "1px solid #EF4444",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {t("common.delete")}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -548,55 +555,61 @@ export default function MenusPage() {
               >
                 {t("common.back")}
               </button>
-              {!isEditingMenu ? (
-                <button
-                  onClick={() => setIsEditingMenu(true)}
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#7C3AED",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  {t("menus.editMenu")}
-                </button>
-              ) : (
+
+              {/* Botones editar/guardar - SOLO ADMIN */}
+              {userRole === "admin" && (
                 <>
-                  <button
-                    onClick={handleSaveMenu}
-                    disabled={savingMenu}
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#22C55E",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontWeight: 600,
-                      cursor: savingMenu ? "not-allowed" : "pointer",
-                      fontSize: 14,
-                    }}
-                  >
-                    {savingMenu ? t("common.saving") : t("common.save")}
-                  </button>
-                  <button
-                    onClick={() => setIsEditingMenu(false)}
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#EF4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      fontSize: 14,
-                    }}
-                  >
-                    {t("common.cancel")}
-                  </button>
+                  {!isEditingMenu ? (
+                    <button
+                      onClick={() => setIsEditingMenu(true)}
+                      style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#7C3AED",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontSize: 14,
+                      }}
+                    >
+                      {t("menus.editMenu")}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveMenu}
+                        disabled={savingMenu}
+                        style={{
+                          padding: "10px 20px",
+                          backgroundColor: "#22C55E",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontWeight: 600,
+                          cursor: savingMenu ? "not-allowed" : "pointer",
+                          fontSize: 14,
+                        }}
+                      >
+                        {savingMenu ? t("common.saving") : t("common.save")}
+                      </button>
+                      <button
+                        onClick={() => setIsEditingMenu(false)}
+                        style={{
+                          padding: "10px 20px",
+                          backgroundColor: "#EF4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontSize: 14,
+                        }}
+                      >
+                        {t("common.cancel")}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
