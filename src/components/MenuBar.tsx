@@ -6,7 +6,7 @@ import { RxDashboard } from "react-icons/rx";
 import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
 import { GiCardboardBoxClosed } from "react-icons/gi";
 import { BsForkKnife } from "react-icons/bs";
-import { MdMenuBook } from "react-icons/md";
+import { MdMenuBook, MdOutlineDinnerDining } from "react-icons/md";
 import Logo from "./Logo";
 import UserProfile from "./UserProfile";
 import LanguageSelector from "./LanguageSelector";
@@ -47,12 +47,12 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
       { label: t("nav.bookings"), route: "/bookings", icon: FaCalendarCheck },
       { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
       { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: t("nav.dishes"), route: "/dishes", icon: BsForkKnife },
+      { label: t("nav.dishes"), route: "/dishes", icon: MdOutlineDinnerDining },
     ],
     kitchen: [
       { label: t("nav.kitchen"), route: "/kitchen", icon: FaClipboardList },
       { label: t("nav.ingredients"), route: "/ingredients", icon: GiCardboardBoxClosed },
-      { label: t("nav.dishes"), route: "/dishes", icon: BsForkKnife },
+      { label: t("nav.dishes"), route: "/dishes", icon: MdOutlineDinnerDining },
     ],
     waiter: [
       { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
@@ -122,7 +122,7 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
                 padding: "10px 14px",
                 borderRadius: "14px",
                 border: "none",
-                background: isActive ? "var(--color-white)" : isHovered ? "#f5f5f7" : "transparent",
+                background: isActive ? "var(--color-white)" : isHovered ? "rgba(255,255,255,0.10)" : "transparent",
                 color: isActive || isHovered ? "var(--color-purple)" : "white",
                 cursor: "pointer",
                 transition: "background 0.2s, color 0.2s",

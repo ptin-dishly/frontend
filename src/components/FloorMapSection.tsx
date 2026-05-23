@@ -71,6 +71,7 @@ interface ApiMenuItem {
   price: number;
   category: string;
   isAvailable: boolean;
+  establishmentId: string;
   allergens: { code: string; nameEs: string; nameCa: string }[];
 }
 interface ApiTable {
@@ -382,11 +383,14 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
         setRooms(myRooms);
       }).catch(() => { });
 
-      if (myEstablishmentId) {
-        apiFetch<ApiMenuItem[]>(`/menu-card-items/establishment/${myEstablishmentId}`)
-          .then(setMenuItems)
-          .catch(() => { });
-      }
+      apiFetch<ApiMenuItem[]>(`/menu-card-items`)
+        .then(items => {
+          const filtered = myEstablishmentId
+            ? items.filter(i => i.establishmentId === myEstablishmentId)
+            : items;
+          setMenuItems(filtered);
+        })
+        .catch(() => { });
       apiFetch<string[]>("/orders/active-tables")
         .then(ids => setOccupiedTableIds(new Set(ids)))
         .catch(() => { });

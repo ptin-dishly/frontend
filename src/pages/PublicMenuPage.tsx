@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { menuService, allergenService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import { ESTABLISHMENTS } from "../routes/index";
-import SearchBar from "../components/SearchBar";
-import AllergenMultiFilter from "../components/AllergenMultiFilter";
 
-// Import allergen images
 import glutenImg from "../assets/gluten.png";
 import crustaceansImg from "../assets/crustaceans.png";
 import eggImg from "../assets/egg.png";
@@ -22,31 +19,23 @@ import sulphitesImg from "../assets/sulphites.png";
 import lupinsImg from "../assets/lupins.png";
 import molluscsImg from "../assets/molluscs.png";
 
+const ALLERGEN_ICONS: Record<string, string> = {
+  GLU: glutenImg, CRU: crustaceansImg, HUE: eggImg, PES: fishImg,
+  CAC: peanutsImg, SOJ: soybeansImg, LAC: milkImg, FRU: treeNutsImg,
+  API: celeryImg, MOS: mustardImg, SES: sesameImg, SUL: sulphitesImg,
+  ALT: lupinsImg, MOL: molluscsImg,
+};
+
 interface MenuItemWithAllergens extends MenuItem {
   allergens?: Allergen[];
 }
 
 export default function PublicMenuPage() {
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const allergenImageMap: Record<string, string> = {
-    "GLU": glutenImg,
-    "CRU": crustaceansImg,
-    "HUE": eggImg,
-    "PES": fishImg,
-    "CAC": peanutsImg,
-    "SOJ": soybeansImg,
-    "LAC": milkImg,
-    "FRU": treeNutsImg,
-    "API": celeryImg,
-    "MOS": mustardImg,
-    "SES": sesameImg,
-    "SUL": sulphitesImg,
-    "ALT": lupinsImg,
-    "MOL": molluscsImg,
-  };
+  const establishment = ESTABLISHMENTS[restaurantSlug || ""];
+  const restaurantName = establishment?.name ?? restaurantSlug ?? "";
 
   // View states
   const [view, setView] = useState<"list" | "detail">("list");
@@ -54,18 +43,14 @@ export default function PublicMenuPage() {
 
   // List view states
   const [menus, setMenus] = useState<Menu[]>([]);
-  const [menuSearch, setMenuSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [excludedAllergenIds, setExcludedAllergenIds] = useState<string[]>([]);
   const [menusWithAllergens, setMenusWithAllergens] = useState<Record<string, Allergen[]>>({});
 
   // Detail view states
   const [menuItems, setMenuItems] = useState<MenuItemWithAllergens[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [editedMenuName, setEditedMenuName] = useState("");
-  const [editingMenuPublic, setEditingMenuPublic] = useState(false);
 
   // Fetch menus and allergens
   useEffect(() => {
@@ -74,23 +59,20 @@ export default function PublicMenuPage() {
       setError(null);
 
       // Obtener establishment ID del slug
-      const establishmentId = (ESTABLISHMENTS as Record<string, string>)[restaurantSlug || ""];
-      
+      const establishmentId = establishment?.id;
+
       if (!establishmentId) {
-        setError(`Restaurant "${restaurantSlug}" not found`);
+        setError(t("menus.restaurantNotFound"));
         setLoading(false);
         return;
       }
 
       try {
-        // Obtener menus y allergens en paralelo
-        const [menusRes, allergensRes] = await Promise.all([
-          menuService.getByEstablishment(establishmentId),
-          allergenService.getAll(),
-        ]);
+        // Obtener menus
+        const menusRes = await menuService.getByEstablishment(establishmentId);
 
         if (menusRes.success && menusRes.data) {
-          setMenus(menusRes.data);
+          setMenus(menusRes.data.filter((m) => m.isPublic));
 
           // Enriquecer menus con alérgenos
           if (menusRes.data.length > 0) {
@@ -112,15 +94,11 @@ export default function PublicMenuPage() {
             setMenusWithAllergens(results);
           }
         } else {
-          setError("No menus found for this restaurant");
-        }
-
-        if (allergensRes.success && allergensRes.data) {
-          setAllergens(allergensRes.data);
+          setError(t("menus.noMenusFound"));
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to load restaurant menu");
+        setError(t("menus.loadError"));
       } finally {
         setLoading(false);
       }
@@ -163,317 +141,277 @@ export default function PublicMenuPage() {
 
   const openMenuDetail = (menu: Menu) => {
     setSelectedMenu(menu);
-    setEditedMenuName(menu.name);
-    setEditingMenuPublic(menu.isPublic);
     fetchMenuItems(menu.id);
     setView("detail");
   };
 
-  // Filter menus
-  const filteredMenus = menus.filter((menu) => {
-    const matchesSearch = menu.name.toLowerCase().includes(menuSearch.toLowerCase());
-    const menuAllergenIds = (menusWithAllergens[menu.id] || []).map((a) => a.id);
-    const hasExcludedAllergen = excludedAllergenIds.some((allergenId) =>
-      menuAllergenIds.includes(allergenId)
-    );
-    const matchesAllergen = !hasExcludedAllergen;
+  const filteredMenus = useMemo(() => {
+    if (view !== "list") return [];
+    return menus.filter((menu) => {
+      const menuAllergenIds = (menusWithAllergens[menu.id] || []).map((a) => a.id);
+      return !excludedAllergenIds.some((id) => menuAllergenIds.includes(id));
+    });
+  }, [menus, menusWithAllergens, excludedAllergenIds, view]);
 
-    return matchesSearch && matchesAllergen;
-  });
+  const allergenPool = useMemo(() => {
+    return Array.from(
+      new Map(
+        Object.values(menusWithAllergens).flat().map((a) => [a.id, a])
+      ).values()
+    );
+  }, [menusWithAllergens]);
+
+  const CATEGORY_ORDER = ["entrante", "primer_plato", "segundo_plato", "postre", "salsa", "bebida"];
 
   if (view === "list") {
     return (
-      <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
-        <main style={{ flex: 1, padding: "40px 48px" }}>
-          <div style={{ marginBottom: 30 }}>
-            <h1 style={{ fontSize: 28, color: "#0F172A", margin: 0, fontWeight: 700 }}>
-              {t("menus.title")}
+      <div style={{ background: "#FFFBF5", minHeight: "100vh" }}>
+        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+
+          {/* Header */}
+          <div style={{
+            borderBottom: "2px solid #D6C4A0",
+            padding: "28px 20px 20px",
+            textAlign: "center",
+          }}>
+            <p style={{
+              fontSize: 9, color: "#92400E", letterSpacing: 4,
+              fontFamily: "Georgia, serif",
+              textTransform: "uppercase", margin: "0 0 6px",
+            }}>
+              {t("menus.welcomeTo")}
+            </p>
+            <h1 style={{
+              fontSize: 26, fontWeight: 800, color: "#1C1917",
+              fontFamily: "Georgia, serif", margin: "0 0 5px",
+            }}>
+              {restaurantName}
             </h1>
+            <p style={{
+              fontSize: 11, color: "#78716C", fontStyle: "italic",
+              fontFamily: "Georgia, serif", margin: 0,
+            }}>
+              {t("menus.tagline")}
+            </p>
           </div>
 
-          {error && (
-            <div
-              style={{
-                backgroundColor: "#FEE2E2",
-                color: "#DC2626",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                marginBottom: "24px",
-                fontSize: "14px",
-              }}
-            >
-              ⚠️ {error}
-            </div>
-          )}
-
-          {/* Filters Row - Search and Allergen Filter */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginBottom: 32,
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ maxWidth: 300, width: "100%" }}>
-              <SearchBar
-                value={menuSearch}
-                onChange={setMenuSearch}
-                placeholder={t("menus.searchPlaceholder")}
-              />
-            </div>
-
-            <div style={{ maxWidth: 400, width: "100%" }}>
-              <AllergenMultiFilter
-                allergens={allergens}
-                selectedAllergenIds={excludedAllergenIds}
-                onChange={setExcludedAllergenIds}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
-            {t("menus.showing", { filtered: filteredMenus.length, total: menus.length })}
-            {excludedAllergenIds.length > 0 &&
-              ` (${t("menus.excluding")} ${excludedAllergenIds.map((id) => allergens.find((a) => a.id === id)?.nameEs).join(", ")})`
-            }
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
-              <p>{t("menus.loading")}</p>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 24,
-              }}
-            >
-              {filteredMenus.length === 0 ? (
-                <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
-                  {t("menus.notFound")}
-                </p>
-              ) : (
-                filteredMenus.map((menu) => (
-                  <div
-                    key={menu.id}
-                    onClick={() => openMenuDetail(menu)}
-                    style={{
-                      backgroundColor: "white",
-                      borderRadius: 12,
-                      border: "2px solid #7C3AED",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      padding: 16,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                  >
-                    <div
+          {/* Allergen filter bar */}
+          {allergenPool.length > 0 && (
+            <div style={{
+              padding: "10px 16px",
+              borderBottom: "1px solid #F3E8D0",
+              display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+            }}>
+              <span style={{ fontSize: 11, color: "#92400E", fontWeight: 600, whiteSpace: "nowrap" }}>
+                {t("dishes.excludeAllergen")}
+              </span>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {allergenPool.map((a) => {
+                  const active = excludedAllergenIds.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() =>
+                        setExcludedAllergenIds((prev) =>
+                          active ? prev.filter((id) => id !== a.id) : [...prev, a.id]
+                        )
+                      }
+                      title={a.nameEs}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        background: active ? "#78350F" : "#F3E8D0",
+                        border: active ? "2px solid #78350F" : "2px solid transparent",
+                        borderRadius: 8, padding: "4px 6px",
+                        cursor: "pointer", display: "flex",
+                        alignItems: "center", gap: 4,
+                        opacity: active ? 1 : 0.75,
                       }}
                     >
-                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#0F172A" }}>
-                        {menu.name}
-                      </h3>
-                      <span
-                        style={{
-                          backgroundColor: menu.isPublic ? "#D1FAE5" : "#FEE2E2",
-                          color: menu.isPublic ? "#065F46" : "#991B1B",
-                          padding: "4px 12px",
-                          borderRadius: 20,
-                          fontSize: 12,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {menu.isPublic ? t("menus.public") : t("menus.private")}
-                      </span>
-                    </div>
-
-                    <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>
-                      {t("menus.created")} {new Date(menu.createdAt).toLocaleDateString()}
-                    </p>
-
-                    {/* Show allergens with icons */}
-                    {menusWithAllergens[menu.id] && menusWithAllergens[menu.id].length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-                        {menusWithAllergens[menu.id].map((allergen) => (
-                          <img
-                            key={allergen.id}
-                            src={allergenImageMap[allergen.code]}
-                            alt={allergen.nameEs}
-                            title={allergen.nameEs}
-                            style={{ width: 24, height: 24, objectFit: "contain" }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+                      {ALLERGEN_ICONS[a.code]
+                        ? <img src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} style={{ width: 20, height: 20, objectFit: "contain", filter: active ? "brightness(0) invert(1)" : "none" }} />
+                        : <span style={{ fontSize: 10, fontWeight: 700, color: active ? "white" : "#78350F" }}>{a.code}</span>
+                      }
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
-        </main>
+
+          {/* Error */}
+          {error && (
+            <p style={{ color: "#92400E", padding: "16px 20px", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+              {error}
+            </p>
+          )}
+
+          {/* Loading */}
+          {loading && (
+            <p style={{ color: "#78716C", padding: "32px 20px", textAlign: "center", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+              {t("common.loading")}
+            </p>
+          )}
+
+          {/* Menu card list */}
+          {!loading && (
+            <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {filteredMenus.length === 0 && (
+                <p style={{ textAlign: "center", color: "#78716C", fontFamily: "Georgia, serif", fontStyle: "italic", padding: "24px 0" }}>
+                  {t("menus.notFound")}
+                </p>
+              )}
+              {filteredMenus.map((menu) => {
+                const menuAllergens = menusWithAllergens[menu.id] || [];
+                return (
+                  <div
+                    key={menu.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openMenuDetail(menu)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openMenuDetail(menu); }}
+                    style={{
+                      background: "white", borderRadius: 10,
+                      border: "1px solid #F3E8D0",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                      padding: "14px 16px",
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#FFFBF5"; e.currentTarget.style.borderColor = "#D6C4A0"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#F3E8D0"; }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: "0 0 2px", fontSize: 15, fontWeight: 700, color: "#1C1917", fontFamily: "Georgia, serif" }}>
+                        {menu.name}
+                      </p>
+                      <p style={{ margin: "0 0 8px", fontSize: 11, color: "#78716C", fontStyle: "italic", fontFamily: "Georgia, serif" }}>
+                        {new Date(menu.createdAt).toLocaleDateString()}
+                      </p>
+                      {menuAllergens.length > 0 && (
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                          {menuAllergens.map((a) => (
+                            ALLERGEN_ICONS[a.code]
+                              ? <img key={a.id} src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} title={a.nameEs} style={{ width: 20, height: 20, objectFit: "contain" }} />
+                              : <span key={a.id} style={{ background: "#FEF3C7", color: "#92400E", borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700 }}>{a.code}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 20, color: "#D6C4A0", marginLeft: 12 }}>›</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
   // Detail view
+  const grouped = menuItems.reduce<Record<string, MenuItemWithAllergens[]>>((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {});
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
-      <main style={{ flex: 1, padding: "40px 48px" }}>
-        <button
-          onClick={() => setView("list")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            backgroundColor: "transparent",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 600,
-            color: "#0F172A",
-            marginBottom: 20,
-          }}
-        >
-          <span style={{ fontSize: 20 }}>←</span>
-          {t("menus.backToMenus")}
-        </button>
+    <div style={{ background: "#FFFBF5", minHeight: "100vh" }}>
+      <div style={{ maxWidth: 600, margin: "0 auto" }}>
 
-        <div style={{ marginTop: 24, maxWidth: 900 }}>
-          <div style={{ marginBottom: 32 }}>
-            <h1 style={{ fontSize: 28, color: "#0F172A", margin: "0 0 8px", fontWeight: 700 }}>
-              {selectedMenu?.name}
-            </h1>
-            <p style={{ margin: "0 0 16px", color: "#6B7280", fontSize: 14 }}>
-              {selectedMenu?.isPublic ? "🌍 " + t("menus.public") : "🔒 " + t("menus.private")}
-            </p>
-          </div>
+        {/* Detail header */}
+        <div style={{ borderBottom: "2px solid #D6C4A0", padding: "14px 16px 0" }}>
+          <button
+            onClick={() => setView("list")}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              fontSize: 12, color: "#78350F", fontWeight: 600,
+              background: "transparent", border: "none", cursor: "pointer",
+              marginBottom: 10, padding: 0,
+            }}
+          >
+            ← {t("menus.backToMenus")}
+          </button>
+          <h1 style={{
+            fontSize: 20, fontWeight: 800, color: "#1C1917",
+            fontFamily: "Georgia, serif", margin: "0 0 12px",
+          }}>
+            {selectedMenu?.name}
+          </h1>
+        </div>
 
-          {/* Menu Items Section */}
-          <div>
-            <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 16px", fontWeight: 600 }}>
-              {t("menus.menuItems")}
-            </h2>
+        {/* Loading */}
+        {detailLoading && (
+          <p style={{ color: "#78716C", padding: "32px 20px", textAlign: "center", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+            {t("menus.loadingItems")}
+          </p>
+        )}
 
-            {detailLoading ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", color: "#6B7280" }}>
-                <p>{t("menus.loadingItems")}</p>
-              </div>
-            ) : (
-              <div
-                style={{
-                  border: "1px solid #E5E7EB",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  backgroundColor: "white",
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                    gap: 16,
-                    padding: "12px 16px",
-                    backgroundColor: "#F3F4F6",
-                    fontWeight: 600,
-                    fontSize: 12,
-                    color: "#6B7280",
-                    borderBottom: "1px solid #E5E7EB",
-                  }}
-                >
-                  <div>{t("menus.dish")}</div>
-                  <div>{t("menus.category")}</div>
-                  <div>{t("menus.price")}</div>
-                  <div>{t("menus.available")}</div>
-                </div>
+        {/* Category sections */}
+        {!detailLoading && (
+          <div style={{ paddingBottom: 32 }}>
+            {CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0).map((cat) => (
+              <div key={cat} style={{ padding: "16px 16px 0" }}>
 
-                {menuItems.length === 0 ? (
-                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#6B7280" }}>
-                    {t("menus.noItemsFound")}
-                  </div>
-                ) : (
-                  menuItems.map((item, index) => (
+                {/* Category label */}
+                <p style={{
+                  fontSize: 9, fontWeight: 700, color: "#92400E",
+                  letterSpacing: 3, textAlign: "center",
+                  borderBottom: "1px solid #F3E8D0",
+                  paddingBottom: 8, margin: "0 0 8px",
+                  fontFamily: "Georgia, serif",
+                  textTransform: "uppercase",
+                }}>
+                  {t(`dishCreate.categories.${cat}`, { defaultValue: cat })}
+                </p>
+
+                {/* Dish rows */}
+                {grouped[cat].map((item, idx) => {
+                  const isLast = idx === grouped[cat].length - 1;
+                  return (
                     <div
                       key={item.id}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                        gap: 16,
-                        padding: "12px 16px",
-                        borderBottom:
-                          index < menuItems.length - 1
-                            ? "1px solid #E5E7EB"
-                            : "none",
-                        alignItems: "center",
-                        backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB",
+                        borderBottom: isLast ? "none" : "1px dotted #D6C4A0",
+                        paddingBottom: isLast ? 0 : 10,
+                        marginBottom: isLast ? 0 : 10,
                       }}
                     >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 500, color: "#0F172A", fontSize: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1917", fontFamily: "Georgia, serif", flex: 1 }}>
                           {item.recipeName}
-                        </p>
-                        {/* Show allergen icons */}
-                        {item.allergens && item.allergens.length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                            {item.allergens.map((allergen) => (
-                              <img
-                                key={allergen.id}
-                                src={allergenImageMap[allergen.code]}
-                                alt={allergen.nameEs}
-                                title={allergen.nameEs}
-                                style={{ width: 16, height: 16, objectFit: "contain" }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        {item.category}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>
-                        €{item.price.toFixed(2)}
-                      </div>
-                      <div>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            backgroundColor: item.isAvailable ? "#D1FAE5" : "#FEE2E2",
-                            color: item.isAvailable ? "#065F46" : "#991B1B",
-                            padding: "4px 12px",
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {item.isAvailable ? t("menus.available") : t("menus.unavailable")}
+                        </span>
+                        <span style={{ fontSize: 13, color: "#78350F", fontWeight: 700, whiteSpace: "nowrap", marginLeft: 12 }}>
+                          {item.price.toFixed(2)}€
                         </span>
                       </div>
+                      {item.recipeDescription && (
+                        <p style={{ fontSize: 11, color: "#78716C", fontStyle: "italic", fontFamily: "Georgia, serif", margin: "3px 0 0" }}>
+                          {item.recipeDescription}
+                        </p>
+                      )}
+                      {item.allergens && item.allergens.length > 0 && (
+                        <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
+                          {item.allergens.map((a) => (
+                            ALLERGEN_ICONS[a.code]
+                              ? <img key={a.id} src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} title={a.nameEs} style={{ width: 18, height: 18, objectFit: "contain" }} />
+                              : <span key={a.id} style={{ background: "#FEF3C7", color: "#92400E", borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700 }}>{a.code}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
+            ))}
+
+            {!detailLoading && CATEGORY_ORDER.every((cat) => !grouped[cat]?.length) && (
+              <p style={{ color: "#78716C", padding: "24px 16px", textAlign: "center", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+                {t("menus.noItems")}
+              </p>
             )}
           </div>
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   );
 }

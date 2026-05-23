@@ -135,7 +135,7 @@ export default function DashboardPage() {
                   onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
                 >
                   <OrderCard
-                    orderId={order.id.slice(0, 8)}
+                    orderId={order.id.replace(/-/g, "").slice(-8).toUpperCase()}
                     tableNumber={order.tableNumber ?? "—"}
                     items={order.items}
                     total={order.total}
