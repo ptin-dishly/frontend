@@ -9,6 +9,7 @@
     "dishes": "Platos"
   },
   "common": {
+    "noImage": "Sin imagen",
     "save": "Guardar",
     "saving": "Guardando...",
     "cancel": "Cancelar",
@@ -84,26 +85,11 @@
     "available": "Disponible",
     "unavailable": "No disponible",
     "deleteConfirm": "¿Estás seguro de que quieres eliminar este menú?",
-    "qrTitle": "QR para Cliente",
-    "qrDescription": "Escanea este QR para abrir el menú en la vista de cliente.",
-    "copyQrLink": "Copiar enlace",
-    "openClientMenu": "Abrir menú cliente",
-    "makePublicForQr": "Este menú debe ser público para compartirlo por QR.",
-    "qrCopied": "Enlace del QR copiado.",
-    "qrCopyFailed": "No se pudo copiar el enlace del QR."
-  },
-  "clientMenu": {
-    "title": "Menú Cliente",
-    "scanPrompt": "Escanea un código QR de menú para ver los platos.",
-    "loading": "Cargando menú...",
-    "loadError": "No se pudo cargar este menú.",
-    "notFound": "Menú no encontrado.",
-    "noPublicMenus": "No hay menús públicos disponibles en este momento.",
-    "notPublic": "Este menú todavía no es público.",
-    "noItems": "No hay platos disponibles en este menú.",
-    "public": "Menú público",
-    "private": "Menú privado",
-    "category": "Categoría:"
+    "welcomeTo": "Bienvenidos a",
+    "tagline": "Cocina de mercado",
+    "restaurantNotFound": "Restaurante no encontrado",
+    "noMenusFound": "No hay menús disponibles para este restaurante",
+    "loadError": "Error al cargar el menú"
   },
   "dishes": {
     "title": "Platos",
@@ -138,24 +124,32 @@
   },
   "dishCreate": {
     "title": "Crear Nueva Receta",
+    "imageUrl": "URL de la imagen",
     "backToDishes": "Volver a Platos",
-    "recipeName": "Nombre de la receta *",
-    "recipeNamePlaceholder": "ej., Lasaña de carne",
+    "name": "Nombre de la receta *",
+    "namePlaceholder": "ej., Lasaña de carne",
     "description": "Descripción",
     "descriptionPlaceholder": "ej., Deliciosa lasaña casera...",
     "category": "Categoría *",
     "portionSize": "Tamaño de ración (kg) *",
     "servings": "Raciones *",
     "prepTime": "Tiempo de preparación (minutos) *",
+    "ingredient": "Ingrediente",
+    "ingredientPlaceholder": "Buscar ingrediente...",
+    "quantity": "Cantidad",
+    "unit": "Unidad",
+    "optional": "Opt.",
+    "addIngredient": "+ Agregar",
+    "ingredients": "Ingredientes",
     "createButton": "Crear Receta",
     "creating": "Creando...",
     "categories": {
-      "starter": "Entrante",
-      "firstCourse": "Primer Plato",
-      "secondCourse": "Segundo Plato",
-      "dessert": "Postre",
-      "sauce": "Salsa",
-      "drink": "Bebida"
+      "entrante": "Entrante",
+      "primer_plato": "Primer plato",
+      "segundo_plato": "Segundo plato",
+      "postre": "Postre",
+      "salsa": "Salsa",
+      "bebida": "Bebida"
     }
   },
   "ingredients": {
@@ -283,5 +277,27 @@
   "clearAll": "Limpiar todo",
   "title": "Alérgenos",
   "noAllergens": "Sin alérgenos"
+  },
+  "menuCreate": {
+    "title": "Crear Nuevo Menú",
+    "backToMenus": "Volver a Menús",
+    "name": "Nombre del menú *",
+    "namePlaceholder": "ej., Menú de Comida",
+    "isPublic": "Menú público",
+    "isPublicDescription": "Visible en el código QR",
+    "recipe": "Plato",
+    "recipePlaceholder": "Buscar plato...",
+    "price": "Precio",
+    "pricePlaceholder": "0.00",
+    "suggestedPrice": "Precio sugerido:",
+    "noHistory": "Sin historial",
+    "displayOrder": "Orden",
+    "available": "Disponible",
+    "addItem": "+ Agregar",
+    "items": "Platos del Menú",
+    "menuItems": "Platos agregados",
+    "createButton": "Crear Menú",
+    "creating": "Creando...",
+    "noItemsAdded": "No hay platos agregados aún"
   }
 }

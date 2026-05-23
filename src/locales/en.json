@@ -9,6 +9,7 @@
     "dishes": "Dishes"
   },
   "common": {
+    "noImage": "No image",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
@@ -35,7 +36,7 @@
     "email": "Email",
     "password": "Password",
     "loggingIn": "Logging in...",
-    "submit": "Submit",
+    "submit": "Log In",
     "forgotPassword": "Forgot password?",
     "loginFailed": "Login failed. Please check your credentials.",
     "fetchUserFailed": "Failed to fetch user information."
@@ -46,7 +47,7 @@
     "waiter": "Waiter",
     "sales": "Sales"
   },
-  "logout": "Exit",
+  "logout": "Log out",
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",
     "role": "Role:",
@@ -84,26 +85,11 @@
     "available": "Available",
     "unavailable": "Unavailable",
     "deleteConfirm": "Are you sure you want to delete this menu?",
-    "qrTitle": "Client QR",
-    "qrDescription": "Scan this QR to open the menu in the client view.",
-    "copyQrLink": "Copy Link",
-    "openClientMenu": "Open Client Menu",
-    "makePublicForQr": "This menu must be public to share via QR.",
-    "qrCopied": "QR link copied.",
-    "qrCopyFailed": "Could not copy the QR link."
-  },
-  "clientMenu": {
-    "title": "Client Menu",
-    "scanPrompt": "Scan a menu QR code to view dishes.",
-    "loading": "Loading menu...",
-    "loadError": "Could not load this menu.",
-    "notFound": "Menu not found.",
-    "noPublicMenus": "No public menus available right now.",
-    "notPublic": "This menu is not public yet.",
-    "noItems": "No dishes available in this menu.",
-    "public": "Public menu",
-    "private": "Private menu",
-    "category": "Category:"
+    "welcomeTo": "Welcome to",
+    "tagline": "Market cuisine",
+    "restaurantNotFound": "Restaurant not found",
+    "noMenusFound": "No menus available for this restaurant",
+    "loadError": "Failed to load menu"
   },
   "dishes": {
     "title": "Dishes",
@@ -138,24 +124,32 @@
   },
   "dishCreate": {
     "title": "Create New Recipe",
+    "imageUrl": "Image URL",
     "backToDishes": "Back to Dishes",
-    "recipeName": "Recipe Name *",
-    "recipeNamePlaceholder": "e.g., Meat Lasagna",
+    "name": "Recipe Name *",
+    "namePlaceholder": "e.g., Meat Lasagna",
     "description": "Description",
     "descriptionPlaceholder": "e.g., Delicious homemade lasagna...",
     "category": "Category *",
     "portionSize": "Portion Size (kg) *",
     "servings": "Servings *",
     "prepTime": "Preparation Time (minutes) *",
+    "ingredient": "Ingredient",
+    "ingredientPlaceholder": "Search ingredient...",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "optional": "Opt.",
+    "addIngredient": "+ Add",
+    "ingredients": "Ingredients",
     "createButton": "Create Recipe",
     "creating": "Creating...",
     "categories": {
-      "starter": "Starter",
-      "firstCourse": "First Course",
-      "secondCourse": "Second Course",
-      "dessert": "Dessert",
-      "sauce": "Sauce",
-      "drink": "Drink"
+      "entrante": "Starter",
+      "primer_plato": "First Course",
+      "segundo_plato": "Second Course",
+      "postre": "Dessert",
+      "salsa": "Sauce",
+      "bebida": "Drink"
     }
   },
   "ingredients": {
@@ -283,5 +277,27 @@
   "clearAll": "Clear All",
   "title": "Allergens",
   "noAllergens": "No allergens"
+  },
+  "menuCreate": {
+    "title": "Create New Menu",
+    "backToMenus": "Back to Menus",
+    "name": "Menu Name *",
+    "namePlaceholder": "e.g., Lunch Menu",
+    "isPublic": "Public Menu",
+    "isPublicDescription": "Visible on QR code",
+    "recipe": "Dish",
+    "recipePlaceholder": "Search dish...",
+    "price": "Price",
+    "pricePlaceholder": "0.00",
+    "suggestedPrice": "Suggested Price:",
+    "noHistory": "No history",
+    "displayOrder": "Order",
+    "available": "Available",
+    "addItem": "+ Add",
+    "items": "Menu Dishes",
+    "menuItems": "Added Dishes",
+    "createButton": "Create Menu",
+    "creating": "Creating...",
+    "noItemsAdded": "No dishes added yet"
   }
 }

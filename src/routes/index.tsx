@@ -3,6 +3,7 @@ import { ProtectedRoute } from "../components/ProtectedRoute";
 import LogInPage from "../pages/LogInPage";
 import DashboardPage from "../pages/DashboardPage";
 import MenuPage from "../pages/MenuPage";
+import PublicMenuPage from "../pages/PublicMenuPage";
 import DishPage from "../pages/DishPage";
 import DishDetailPage from "../pages/DishDetailPage";
 import IngredientsPage from "../pages/IngredientsPage";
@@ -12,7 +13,13 @@ import TablesPage from "../pages/TablePage";
 import BookingsPage from "../pages/BookingPage";
 import RecipeCreatePage from "../pages/DishCreatePage";
 import AllComponents from "../pages/AllComponents";
-import ClientMenuPage from "../pages/ClientMenuPage";
+import MenuCreatePage from "../pages/MenuCreatePage";
+
+
+export const ESTABLISHMENTS: Record<string, { id: string; name: string }> = {
+  "ca-la-maria": { id: "22222222-0002-0002-0002-000000000001", name: "Ca la Maria" },
+  "el-raco":     { id: "22222222-0002-0002-0002-000000000002", name: "El Racó" },
+};
 
 export function AppRoutes() {
   return (
@@ -58,11 +65,27 @@ export function AppRoutes() {
           }
         />
 
+        <Route 
+            path="/restaurant/:restaurantSlug" 
+            element={
+            <PublicMenuPage/>
+            } 
+        />
+
         <Route
           path="/menus"
           element={
             <ProtectedRoute>
               <MenuPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/menus/new"
+          element={
+            <ProtectedRoute>
+              <MenuCreatePage />
             </ProtectedRoute>
           }
         />

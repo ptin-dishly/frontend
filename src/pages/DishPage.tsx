@@ -66,6 +66,10 @@ export default function DishPage() {
   const [recipesWithAllergens, setRecipesWithAllergens] = useState<Record<string, string[]>>({});
   const [dishAllergens, setDishAllergens] = useState<Record<string, Allergen[]>>({});
 
+  const getCategoryLabel = (category: string): string => {
+    return t(`dishCreate.categories.${category}`, { defaultValue: category });
+  };
+
   // Fetch dishes and allergens - single request
   useEffect(() => {
     const fetchDishesAndAllergens = async () => {
@@ -149,7 +153,10 @@ export default function DishPage() {
 
   const categories = [
     { label: t("common.all"), value: "" },
-    ...Array.from(new Set(dishes.map((d) => d.category))).map((cat) => ({ label: cat, value: cat })),
+    ...Array.from(new Set(dishes.map((d) => d.category))).map((cat) => ({
+      label: getCategoryLabel(cat),
+      value: cat,
+    })),
   ];
 
   const filteredDishes = dishes.filter((dish) => {
@@ -348,7 +355,7 @@ export default function DishPage() {
                           </div>
                         )}
                       </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.category}</div>
+                      <div style={{ fontSize: 13, color: "#0F172A" }}>{getCategoryLabel(dish.category)}</div>
                       <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.preparationTime} min</div>
                       <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.servings}</div>
                       <div style={{ display: "flex", gap: 8 }}>
