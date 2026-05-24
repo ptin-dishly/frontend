@@ -89,7 +89,9 @@
     "tagline": "Cocina de mercado",
     "restaurantNotFound": "Restaurante no encontrado",
     "noMenusFound": "No hay menús disponibles para este restaurante",
-    "loadError": "Error al cargar el menú"
+    "loadError": "Error al cargar el menú",
+    "qrTitle": "Escanea para ver el menú",
+    "excluding": "Excluyendo alérgenos: "
   },
   "dishes": {
     "title": "Platos",

@@ -90,7 +90,8 @@
     "restaurantNotFound": "Restaurant no trobat",
     "noMenusFound": "No hi ha menús disponibles per a aquest restaurant",
     "loadError": "Error en carregar el menú",
-    "qrTitle": "Escaneja el codi QR per veure el menú"
+    "qrTitle": "Escaneja per veure el menú",
+    "excluding": "Excloent al·lèrgens: "
   },
   "dishes": {
     "title": "Plats",

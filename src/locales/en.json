@@ -89,7 +89,9 @@
     "tagline": "Market cuisine",
     "restaurantNotFound": "Restaurant not found",
     "noMenusFound": "No menus available for this restaurant",
-    "loadError": "Failed to load menu"
+    "loadError": "Failed to load menu",
+    "qrTitle": "Scan to view menu",
+    "excluding": "Excluding allergens: "
   },
   "dishes": {
     "title": "Dishes",

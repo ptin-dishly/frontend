@@ -27,13 +27,23 @@ export default function MenusPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   if (!["admin", "waiter"].includes(userRole)) {
     navigate("/dashboard");
     return null;
   }
 
+
+  const getAllergenName = (allergenId: string): string => {
+      const allergen = allergens.find((a) => a.id === allergenId);
+      if (!allergen) return "";
+      
+      if (i18n.language.startsWith("ca")) return allergen.nameCa;
+      if (i18n.language.startsWith("es")) return allergen.nameEs;
+      return allergen.nameEn || allergen.nameEs;
+  };
+  
   // Map allergen codes to imported images
   const allergenImageMap: Record<string, string> = {
     "GLU": glutenImg,
@@ -308,7 +318,7 @@ export default function MenusPage() {
           <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
             {t("menus.showing", { filtered: filteredMenus.length, total: menus.length })}
             {excludedAllergenIds.length > 0 &&
-              ` (${t("menus.excluding")} ${excludedAllergenIds.map((id) => allergens.find((a) => a.id === id)?.nameEs).join(", ")})`
+              ` (${t("menus.excluding")} ${excludedAllergenIds.map(getAllergenName).join(", ")})`
             }
           </div>
 
