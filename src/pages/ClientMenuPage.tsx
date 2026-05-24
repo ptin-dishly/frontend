@@ -143,25 +143,30 @@ export default function ClientMenuPage() {
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#F8FAFC", padding: "24px 16px" }}>
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 16 }}>
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => i18n.changeLanguage(lang.code)}
-              style={{
-                border: "1px solid #CBD5E1",
-                backgroundColor: activeLanguage === lang.code ? "#0F172A" : "white",
-                color: activeLanguage === lang.code ? "white" : "#0F172A",
-                borderRadius: 8,
-                padding: "6px 10px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {lang.label}
-            </button>
-          ))}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+          <div style={{ display: "inline-flex", backgroundColor: "#F1F5F9", borderRadius: 10, padding: 3, gap: 2 }}>
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => i18n.changeLanguage(lang.code)}
+                style={{
+                  border: "none",
+                  backgroundColor: activeLanguage === lang.code ? "#0F172A" : "transparent",
+                  color: activeLanguage === lang.code ? "white" : "#64748B",
+                  borderRadius: 8,
+                  padding: "5px 14px",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  transition: "background 0.15s, color 0.15s",
+                  fontFamily: "inherit",
+                }}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <section style={{ backgroundColor: "white", border: "1px solid #E5E7EB", borderRadius: 16, padding: 24, boxShadow: "0 6px 18px rgba(15,23,42,0.06)" }}>
@@ -195,15 +200,19 @@ export default function ClientMenuPage() {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                         <div>
-                          <h2 style={{ margin: 0, fontSize: 18, color: "#0F172A" }}>{item.recipeName}</h2>
+                          <h2 style={{ margin: 0, fontSize: 18, color: "#0F172A" }}>
+                            {t(`dishes.names.${item.recipeName}`, { defaultValue: item.recipeName })}
+                          </h2>
                           <p style={{ margin: "6px 0 0", color: "#64748B", fontSize: 14 }}>
-                            {t("clientMenu.category")} {item.category}
+                            {t(`clientMenu.categories.${item.category}`, { defaultValue: item.category.replace(/_/g, " ") })}
                           </p>
                         </div>
                         <p style={{ margin: 0, color: "#0F172A", fontWeight: 700, fontSize: 18 }}>€{item.price.toFixed(2)}</p>
                       </div>
                       {item.recipeDescription && (
-                        <p style={{ margin: "10px 0 0", color: "#334155", fontSize: 14 }}>{item.recipeDescription}</p>
+                        <p style={{ margin: "10px 0 0", color: "#334155", fontSize: 14 }}>
+                          {t(`dishes.descriptions.${item.recipeDescription}`, { defaultValue: item.recipeDescription })}
+                        </p>
                       )}
                     </article>
                   ))}
