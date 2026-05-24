@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { menuService, allergenService, userService, recipeService, type Menu, type MenuItem, type Allergen } from "../services/api";
+import { menuService, allergenService, recipeService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import AllergenMultiFilter from "../components/AllergenMultiFilter";
@@ -79,15 +79,8 @@ export default function MenusPage() {
       setLoading(true);
       setError(null);
       try {
-        const userRes = await userService.getMe();
-        if (!userRes.success || !userRes.data) {
-          setError("Failed to get user information");
-          setLoading(false);
-          return;
-        }
-
-        const currentUser = userRes.data;
-        const establishmentId = currentUser.establishmentId;
+        const currentUser = getCurrentUser();
+        const establishmentId = currentUser?.establishmentId;
 
         if (!establishmentId) {
           setError("User has no establishment assigned");
