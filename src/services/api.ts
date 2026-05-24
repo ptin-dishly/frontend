@@ -674,7 +674,7 @@ export interface RecipeStep {
 
 export const recipeStepService = {
   getByRecipe: (recipeId: string) =>
-    api<RecipeStep[]>(`/recipe-steps/recipe/${recipeId}`),
+    api<RecipeStep[]>(`/recipes/${recipeId}/steps`),
   getById: (id: string) =>
     api<RecipeStep>(`/recipe-steps/${id}`),
   create: (data: Omit<RecipeStep, "id">) =>

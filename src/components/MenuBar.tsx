@@ -10,6 +10,8 @@ import { MdMenuBook, MdOutlineDinnerDining } from "react-icons/md";
 import Logo from "./Logo";
 import UserProfile from "./UserProfile";
 import LanguageSelector from "./LanguageSelector";
+import { HiOutlineQrCode } from "react-icons/hi2";
+import QRCode from "react-qr-code"; // o la llibreria que usin
 
 interface MenuBarProps {
   role: "admin" | "kitchen" | "waiter" | "sales";
@@ -220,7 +222,6 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
             </button>
           );
         })}
-      </div>
 
         <div style={{ marginTop: "auto" }}>
           <LanguageSelector />

@@ -14,6 +14,7 @@ import BookingsPage from "../pages/BookingPage";
 import RecipeCreatePage from "../pages/DishCreatePage";
 import AllComponents from "../pages/AllComponents";
 import MenuCreatePage from "../pages/MenuCreatePage";
+import ClientMenuPage from "../pages/ClientMenuPage";
 
 
 export const ESTABLISHMENTS: Record<string, { id: string; name: string }> = {
