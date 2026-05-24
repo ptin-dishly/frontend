@@ -385,13 +385,23 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
           ? tables.filter(t => t.establishmentId === myEstablishmentId)
           : tables;
         setDbTables(myTables);
-        // Sincronitza dbId en taules del mapa que encara no en tenen
+        // Sincronitza dbId i corregeix table_number a la BD si divergeix del número visual
         setData(prev => {
           let changed = false;
           const newTables: Record<string, Table[]> = {};
           for (const [z, ts] of Object.entries(prev.tables)) {
             newTables[z] = ts.map(t => {
-              if (t.dbId) return t;
+              if (t.dbId) {
+                const dbTable = myTables.find(dt => dt.id === t.dbId);
+                if (dbTable && dbTable.tableNumber !== String(t.number)) {
+                  // Visual number differs from DB — push correction to DB
+                  apiFetch(`/tables/${t.dbId}`, {
+                    method: "PUT",
+                    body: JSON.stringify({ tableNumber: String(t.number) }),
+                  }).catch(() => { });
+                }
+                return t;
+              }
               const found = myTables.find(dt => dt.tableNumber === String(t.number));
               if (found) { changed = true; return { ...t, dbId: found.id }; }
               return t;
@@ -825,7 +835,18 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
   const commitRename = useCallback(() => {
     if (!renaming) return;
     const z = zoneRef.current, val = renameVal.trim();
-    updateTables(z, ts => ts.map(t => t.id !== renaming ? t : { ...t, number: val === "" ? t.number : (isNaN(+val) ? val : +val) }));
+    const newNum = val === "" ? null : (isNaN(+val) ? val : +val);
+    updateTables(z, ts => ts.map(t => {
+      if (t.id !== renaming) return t;
+      const num = newNum ?? t.number;
+      if (t.dbId && String(num) !== String(t.number)) {
+        apiFetch(`/tables/${t.dbId}`, {
+          method: "PUT",
+          body: JSON.stringify({ tableNumber: String(num) }),
+        }).catch(() => { });
+      }
+      return { ...t, number: newNum ?? t.number };
+    }));
     setRenaming(null);
   }, [renaming, renameVal, updateTables]);
 
