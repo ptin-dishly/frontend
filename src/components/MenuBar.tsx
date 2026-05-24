@@ -5,7 +5,7 @@ import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
 import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
 import { GiCardboardBoxClosed } from "react-icons/gi";
-import { MdMenuBook, MdOutlineDinnerDining } from "react-icons/md";
+import { MdMenuBook, MdOutlineDinnerDining, MdOutlineBarChart } from "react-icons/md";
 import { HiOutlineQrCode } from "react-icons/hi2";
 import QRCode from "react-qr-code";
 import Logo from "./Logo";
@@ -238,6 +238,37 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
             );
           })}
         </div>
+
+        {role === "admin" && import.meta.env.VITE_DASHBOARD_URL && (
+          <button
+            type="button"
+            onMouseEnter={() => setHovered("__analytics__")}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => window.open(import.meta.env.VITE_DASHBOARD_URL, "_blank")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "14px",
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: hovered === "__analytics__" ? "rgba(255,255,255,0.10)" : "transparent",
+              color: hovered === "__analytics__" ? "var(--color-purple)" : "white",
+              cursor: "pointer",
+              transition: "background 0.2s, color 0.2s",
+              textAlign: "left",
+              fontWeight: 400,
+              fontSize: "16px",
+            }}
+            title="Analytics Dashboard"
+          >
+            <MdOutlineBarChart size={20} color={hovered === "__analytics__" ? "var(--color-purple)" : "white"} />
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              Analytics
+            </span>
+          </button>
+        )}
 
         <div style={{ marginTop: "auto" }}>
           <LanguageSelector />
