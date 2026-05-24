@@ -4,6 +4,12 @@ import { useTranslation } from "react-i18next";
 import { menuService, allergenService, type Menu, type MenuItem, type Allergen } from "../services/api";
 import { ESTABLISHMENTS } from "../routes/index";
 
+const LANGUAGES = [
+  { code: "ca", label: "CA" },
+  { code: "es", label: "ES" },
+  { code: "en", label: "EN" },
+];
+
 import glutenImg from "../assets/gluten.png";
 import crustaceansImg from "../assets/crustaceans.png";
 import eggImg from "../assets/egg.png";
@@ -32,7 +38,8 @@ interface MenuItemWithAllergens extends MenuItem {
 
 export default function PublicMenuPage() {
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const activeLanguage = i18n.language?.slice(0, 2);
 
   const establishment = ESTABLISHMENTS[restaurantSlug || ""];
   const restaurantName = establishment?.name ?? restaurantSlug ?? "";
@@ -193,6 +200,31 @@ export default function PublicMenuPage() {
             }}>
               {t("menus.tagline")}
             </p>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+              <div style={{ display: "inline-flex", backgroundColor: "#F3E8D0", borderRadius: 10, padding: 3, gap: 2 }}>
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => i18n.changeLanguage(lang.code)}
+                    style={{
+                      border: "none",
+                      backgroundColor: activeLanguage === lang.code ? "#78350F" : "transparent",
+                      color: activeLanguage === lang.code ? "#FEF3C7" : "#92400E",
+                      borderRadius: 8,
+                      padding: "5px 14px",
+                      fontWeight: 700,
+                      fontSize: 11,
+                      cursor: "pointer",
+                      fontFamily: "Georgia, serif",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Allergen filter bar */}
@@ -378,7 +410,7 @@ export default function PublicMenuPage() {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1917", fontFamily: "Georgia, serif", flex: 1 }}>
-                          {item.recipeName}
+                          {t(`dishes.names.${item.recipeName}`, { defaultValue: item.recipeName })}
                         </span>
                         <span style={{ fontSize: 13, color: "#78350F", fontWeight: 700, whiteSpace: "nowrap", marginLeft: 12 }}>
                           {item.price.toFixed(2)}€
@@ -386,7 +418,7 @@ export default function PublicMenuPage() {
                       </div>
                       {item.recipeDescription && (
                         <p style={{ fontSize: 11, color: "#78716C", fontStyle: "italic", fontFamily: "Georgia, serif", margin: "3px 0 0" }}>
-                          {item.recipeDescription}
+                          {t(`dishes.descriptions.${item.recipeDescription}`, { defaultValue: item.recipeDescription })}
                         </p>
                       )}
                       {item.allergens && item.allergens.length > 0 && (
