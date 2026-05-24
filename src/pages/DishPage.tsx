@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { recipeService, type Recipe, type Allergen } from "../services/api";
+import { recipeService, recipeStepService, allergenService, type Recipe, type Allergen, type RecipeStep } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
@@ -29,6 +29,7 @@ export default function DishPage() {
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isAdmin = userRole === "admin";
 
   if (!["admin", "kitchen"].includes(userRole)) {
     navigate("/dashboard");
@@ -65,6 +66,11 @@ export default function DishPage() {
   const [excludedAllergenIds, setExcludedAllergenIds] = useState<string[]>([]);
   const [recipesWithAllergens, setRecipesWithAllergens] = useState<Record<string, string[]>>({});
   const [dishAllergens, setDishAllergens] = useState<Record<string, Allergen[]>>({});
+  
+  // Estados para steps
+  const [expandedStepsId, setExpandedStepsId] = useState<string | null>(null);
+  const [stepsLoading, setStepsLoading] = useState<string | null>(null);
+  const [stepsData, setStepsData] = useState<Record<string, RecipeStep[]>>({});
 
   const getCategoryLabel = (category: string): string => {
     return t(`dishCreate.categories.${category}`, { defaultValue: category });
@@ -76,10 +82,8 @@ export default function DishPage() {
       setLoading(true);
       setError(null);
       try {
-        // Un solo request para recetas con alérgenos
         const recipesRes = await recipeService.getAllWithAllergens();
         if (recipesRes.success && recipesRes.data) {
-          // Extraer las recetas
           const recipes = recipesRes.data.map((item: any) => ({
             id: item.id,
             establishmentId: item.establishmentId,
@@ -96,20 +100,17 @@ export default function DishPage() {
           }));
           setDishes(recipes);
 
-          // Mapear alérgenos por receta Y extraer todos los alérgenos únicos
           const allergenMap: Record<string, Allergen[]> = {};
           const allAllergensMap = new Map<string, Allergen>();
 
           recipesRes.data.forEach((item: any) => {
             allergenMap[item.id] = item.allergens || [];
-            // Agregar alérgenos únicos
             item.allergens?.forEach((allergen: Allergen) => {
               allAllergensMap.set(allergen.id, allergen);
             });
           });
 
           setDishAllergens(allergenMap);
-          // Usar los alérgenos del endpoint
           setAllergens(Array.from(allAllergensMap.values()).sort((a, b) => a.euNumber - b.euNumber));
         }
       } catch (err) {
@@ -122,34 +123,54 @@ export default function DishPage() {
     fetchDishesAndAllergens();
   }, []);
 
-  // Fetch recipes for each selected allergen (for filtering)
+  // Filter recipes that have excluded allergens (usando datos ya cargados)
   useEffect(() => {
-    const fetchRecipesForAllergens = async () => {
-      if (excludedAllergenIds.length === 0) {
-        setRecipesWithAllergens({});
-        return;
+    if (excludedAllergenIds.length === 0) {
+      setRecipesWithAllergens({});
+      return;
+    }
+
+    // Buscar en los dishAllergens ya cargados
+    const results: Record<string, string[]> = {};
+    
+    excludedAllergenIds.forEach((allergenId) => {
+      results[allergenId] = Object.entries(dishAllergens)
+        .filter(([, allergens]) => allergens.some((a) => a.id === allergenId))
+        .map(([recipeId]) => recipeId);
+    });
+
+    setRecipesWithAllergens(results);
+  }, [excludedAllergenIds, dishAllergens]);
+
+  // Fetch steps para un plato
+  const handleToggleSteps = async (dishId: string) => {
+    if (expandedStepsId === dishId) {
+      setExpandedStepsId(null);
+      return;
+    }
+
+    setExpandedStepsId(dishId);
+    
+    if (stepsData[dishId]) {
+      return; // Ya tenemos los datos en caché
+    }
+
+    setStepsLoading(dishId);
+    try {
+      const res = await recipeStepService.getByRecipe(dishId);
+      if (res.success && res.data) {
+        setStepsData((prev) => ({
+          ...prev,
+          [dishId]: res.data.sort((a, b) => a.stepNumber - b.stepNumber),
+        }));
       }
-
-      try {
-        const results: Record<string, string[]> = {};
-
-        await Promise.all(
-          excludedAllergenIds.map(async (allergenId) => {
-            const res = await recipeService.getByAllergen(allergenId);
-            if (res.success && res.data) {
-              results[allergenId] = res.data.map((recipe) => recipe.id);
-            }
-          })
-        );
-
-        setRecipesWithAllergens(results);
-      } catch (err) {
-        console.error("Error fetching recipes with allergens:", err);
-      }
-    };
-
-    fetchRecipesForAllergens();
-  }, [excludedAllergenIds]);
+    } catch (err) {
+      console.error("Error fetching recipe steps:", err);
+      setError("Failed to load recipe steps");
+    } finally {
+      setStepsLoading(null);
+    }
+  };
 
   const categories = [
     { label: t("common.all"), value: "" },
@@ -163,7 +184,6 @@ export default function DishPage() {
     const matchesSearch = dish.name.toLowerCase().includes(globalSearch.toLowerCase());
     const matchesCategory = !categoryFilter || dish.category === categoryFilter;
 
-    // Check if recipe has ANY of the excluded allergens (OR logic)
     const hasExcludedAllergen = excludedAllergenIds.some((allergenId) =>
       recipesWithAllergens[allergenId]?.includes(dish.id)
     );
@@ -248,12 +268,15 @@ export default function DishPage() {
 
           <SelectDropdown options={categories} value={categoryFilter} onChange={setCategoryFilter} />
 
-          <button
-            onClick={() => navigate("/dishes/new")}
-            style={{ backgroundColor: "var(--color-green)", color: "white", border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
-          >
-            {t("dishes.newDish")}
-          </button>
+          {/* Botón crear - SOLO ADMIN */}
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/dishes/new")}
+              style={{ backgroundColor: "var(--color-green)", color: "white", border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+            >
+              {t("dishes.newDish")}
+            </button>
+          )}
         </div>
 
         {/* Multi-Allergen Filter */}
@@ -301,7 +324,8 @@ export default function DishPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 0, border: "1px solid #E5E7EB", borderRadius: 12, overflow: "hidden", backgroundColor: "white" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr", gap: 16, padding: "16px 20px", backgroundColor: "#F3F4F6", fontWeight: 600, fontSize: 12, color: "#6B7280", borderBottom: "1px solid #E5E7EB" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px minmax(200px, 2fr) 140px 100px 100px 180px", gap: 16, padding: "16px 20px", backgroundColor: "#F3F4F6", fontWeight: 600, fontSize: 12, color: "#6B7280", borderBottom: "1px solid #E5E7EB", width: "100%" }}>
+              <div></div>
               <div>{t("dishes.name")}</div>
               <div>{t("dishes.category")}</div>
               <div>{t("dishes.prepTime")}</div>
@@ -315,61 +339,133 @@ export default function DishPage() {
               </div>
             ) : (
               filteredDishes.map((dish, index) => (
-                <div
-                  key={dish.id}
-                  style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1.5fr", gap: 16, padding: "16px 20px", borderBottom: index < filteredDishes.length - 1 ? "1px solid #E5E7EB" : "none", alignItems: "center", backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F3F4F6"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = index % 2 === 0 ? "white" : "#F9FAFB"; }}
-                >
-                  {editingId === dish.id && editingData ? (
-                    <>
-                      <input type="text" value={editingData.name || ""} onChange={(e) => setEditingData({ ...editingData, name: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
-                      <input type="text" value={editingData.category || ""} onChange={(e) => setEditingData({ ...editingData, category: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
-                      <input type="number" value={editingData.preparationTime || ""} onChange={(e) => setEditingData({ ...editingData, preparationTime: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
-                      <input type="number" value={editingData.servings || ""} onChange={(e) => setEditingData({ ...editingData, servings: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => handleSave(dish.id)} disabled={savingId === dish.id} style={{ padding: "6px 12px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 6, cursor: savingId === dish.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600 }}>
-                          {savingId === dish.id ? t("common.saving") : t("common.save")}
+                <div key={dish.id}>
+                  <div
+                    style={{ display: "grid", gridTemplateColumns: "40px minmax(200px, 2fr) 140px 100px 100px 180px", gap: 16, padding: "16px 20px", borderBottom: index < filteredDishes.length - 1 ? "1px solid #E5E7EB" : "none", alignItems: "center", backgroundColor: index % 2 === 0 ? "white" : "#F9FAFB", width: "100%" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F3F4F6"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = index % 2 === 0 ? "white" : "#F9FAFB"; }}
+                  >
+                    {editingId === dish.id && editingData ? (
+                      <>
+                        <div></div>
+                        <input type="text" value={editingData.name || ""} onChange={(e) => setEditingData({ ...editingData, name: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit", minWidth: 0 }} />
+                        <input type="text" value={editingData.category || ""} onChange={(e) => setEditingData({ ...editingData, category: e.target.value })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                        <input type="number" value={editingData.preparationTime || ""} onChange={(e) => setEditingData({ ...editingData, preparationTime: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                        <input type="number" value={editingData.servings || ""} onChange={(e) => setEditingData({ ...editingData, servings: Number(e.target.value) })} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E5E7EB", fontSize: 13, fontFamily: "inherit" }} />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => handleSave(dish.id)} disabled={savingId === dish.id} style={{ padding: "6px 12px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 6, cursor: savingId === dish.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600 }}>
+                            {savingId === dish.id ? t("common.saving") : t("common.save")}
+                          </button>
+                          <button onClick={handleCancel} style={{ padding: "6px 12px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                            {t("common.cancel")}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleToggleSteps(dish.id)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: 16,
+                            padding: 0,
+                            width: 24,
+                            height: 24,
+                          }}
+                          title={t("dishes.viewSteps") || "View steps"}
+                        >
+                          {expandedStepsId === dish.id ? "∨" : ">"}
                         </button>
-                        <button onClick={handleCancel} style={{ padding: "6px 12px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-                          {t("common.cancel")}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>{dish.name}</p>
-                        {/* Show allergen icons from cached data */}
-                        {dishAllergens[dish.id] && dishAllergens[dish.id].length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                            {dishAllergens[dish.id].map((allergen) => (
-                              <img
-                                key={allergen.id}
-                                src={allergenImageMap[allergen.code]}
-                                alt={allergen.nameEs}
-                                title={allergen.nameEs}
-                                style={{ width: 16, height: 16, objectFit: "contain" }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>{getCategoryLabel(dish.category)}</div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.preparationTime} min</div>
-                      <div style={{ fontSize: 13, color: "#0F172A" }}>{dish.servings}</div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => handleEdit(dish)} style={{ backgroundColor: "transparent", border: "none", color: "#7C3AED", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>
-                          {t("common.edit")}
-                        </button>
-                        <button onClick={() => handleDelete(dish.id)} style={{ backgroundColor: "transparent", border: "none", color: "#EF4444", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>
-                          {t("common.delete")}
-                        </button>
-                        <button onClick={() => navigate(`/dishes/${dish.id}`)} style={{ backgroundColor: "transparent", border: "none", color: "#3B82F6", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px" }}>
-                          {t("common.view")}
-                        </button>
-                      </div>
-                    </>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dish.name}</p>
+                          {dishAllergens[dish.id] && dishAllergens[dish.id].length > 0 && (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                              {dishAllergens[dish.id].map((allergen) => (
+                                <img
+                                  key={allergen.id}
+                                  src={allergenImageMap[allergen.code]}
+                                  alt={allergen.nameEs}
+                                  title={allergen.nameEs}
+                                  style={{ width: 16, height: 16, objectFit: "contain" }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 13, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{getCategoryLabel(dish.category)}</div>
+                        <div style={{ fontSize: 13, color: "#0F172A", whiteSpace: "nowrap" }}>{dish.preparationTime} min</div>
+                        <div style={{ fontSize: 13, color: "#0F172A", whiteSpace: "nowrap" }}>{dish.servings}</div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => navigate(`/dishes/${dish.id}`)} style={{ backgroundColor: "transparent", border: "none", color: "#3B82F6", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px", whiteSpace: "nowrap" }}>
+                            {t("common.view")}
+                          </button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => handleEdit(dish)} style={{ backgroundColor: "transparent", border: "none", color: "#7C3AED", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px", whiteSpace: "nowrap" }}>
+                                {t("common.edit")}
+                              </button>
+                              <button onClick={() => handleDelete(dish.id)} style={{ backgroundColor: "transparent", border: "none", color: "#EF4444", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 8px", whiteSpace: "nowrap" }}>
+                                {t("common.delete")}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Steps Expandable Row */}
+                  {expandedStepsId === dish.id && (
+                    <div
+                      style={{
+                        backgroundColor: "#F9FAFB",
+                        padding: "16px 20px",
+                        borderBottom: "1px solid #E5E7EB",
+                        borderLeft: "4px solid var(--color-purple)",
+                      }}
+                    >
+                      {stepsLoading === dish.id ? (
+                        <p style={{ margin: 0, color: "#6B7280", fontSize: 13 }}>{t("common.loading")}</p>
+                      ) : stepsData[dish.id] && stepsData[dish.id].length > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {stepsData[dish.id].map((step) => (
+                            <div key={step.id} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                              <div
+                                style={{
+                                  backgroundColor: "var(--color-purple)",
+                                  color: "white",
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: "50%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {step.stepNumber}
+                              </div>
+                              <div>
+                                <p style={{ margin: 0, fontSize: 13, color: "#0F172A", fontWeight: 500 }}>
+                                  {step.instruction}
+                                </p>
+                                {step.duration && (
+                                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6B7280" }}>
+                                    ⏱️ {step.duration} min
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, color: "#6B7280", fontSize: 13 }}>{t("dishDetail.noSteps") || "No steps available"}</p>
+                      )}
+                    </div>
                   )}
                 </div>
               ))

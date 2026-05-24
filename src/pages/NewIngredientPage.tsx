@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { ingredientService } from "../services/api";
+import { ingredientService, allergenService, type Allergen } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
 
@@ -19,10 +19,40 @@ export default function NewIngredientPage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState(true); // ← AGREGAR
+  const [isActive, setIsActive] = useState(true);
+  const [allergens, setAllergens] = useState<Allergen[]>([]);
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingAllergens, setLoadingAllergens] = useState(true);
+
+  // Fetch allergens
+  useEffect(() => {
+    const fetchAllergens = async () => {
+      setLoadingAllergens(true);
+      try {
+        const res = await allergenService.getAll();
+        if (res.success && res.data) {
+          setAllergens(res.data);
+        }
+      } catch (err) {
+        console.error("Error fetching allergens:", err);
+      } finally {
+        setLoadingAllergens(false);
+      }
+    };
+
+    fetchAllergens();
+  }, []);
+
+  const handleAllergenToggle = (allergenId: string) => {
+    setSelectedAllergens((prev) =>
+      prev.includes(allergenId)
+        ? prev.filter((id) => id !== allergenId)
+        : [...prev, allergenId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,12 +66,16 @@ export default function NewIngredientPage() {
 
     setLoading(true);
     try {
-      console.log("📝 Creating ingredient:", { name, description, isActive });
+      console.log("📝 Creating ingredient:", { name, description, isActive, allergens: selectedAllergens });
       
       const res = await ingredientService.create({
         name: name.trim(),
         description: description.trim() || null,
-        isActive, // ← AGREGAR
+        isActive,
+        allergens: selectedAllergens.map((allergenId) => ({
+          allergenId,
+          presence: "contains",
+        })),
       });
 
       if (res.success && res.data) {
@@ -52,6 +86,7 @@ export default function NewIngredientPage() {
         setName("");
         setDescription("");
         setIsActive(true);
+        setSelectedAllergens([]);
 
         // Redirigir después de 1.5 segundos
         setTimeout(() => {
@@ -185,7 +220,7 @@ export default function NewIngredientPage() {
             />
           </div>
 
-          {/* Active Status - NUEVO */}
+          {/* Active Status */}
           <div>
             <label
               style={{
@@ -210,6 +245,76 @@ export default function NewIngredientPage() {
               />
               {t("newIngredient.isActive")}
             </label>
+          </div>
+
+          {/* Allergens */}
+          <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "12px",
+                fontWeight: 600,
+                color: "#0F172A",
+              }}
+            >
+              {t("newIngredient.allergens")}
+            </label>
+
+            {loadingAllergens ? (
+              <p style={{ color: "#6B7280", fontSize: 14 }}>{t("common.loading")}</p>
+            ) : allergens.length === 0 ? (
+              <p style={{ color: "#6B7280", fontSize: 14 }}>{t("newIngredient.noAllergensAvailable")}</p>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                {allergens.map((allergen) => (
+                  <label
+                    key={allergen.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 12px",
+                      backgroundColor: selectedAllergens.includes(allergen.id)
+                        ? "#E0E7FF"
+                        : "#F9FAFB",
+                      border: selectedAllergens.includes(allergen.id)
+                        ? "1px solid #7C3AED"
+                        : "1px solid #E5E7EB",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAllergens.includes(allergen.id)}
+                      onChange={() => handleAllergenToggle(allergen.id)}
+                      disabled={loading}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        cursor: loading ? "not-allowed" : "pointer",
+                      }}
+                    />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "#0F172A" }}>
+                      {allergen.nameEs}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {selectedAllergens.length > 0 && (
+              <p style={{ margin: "12px 0 0", fontSize: 12, color: "#6B7280" }}>
+                {t("newIngredient.selectedAllergens", { count: selectedAllergens.length })}
+              </p>
+            )}
           </div>
 
           {/* Buttons */}

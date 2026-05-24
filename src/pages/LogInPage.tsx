@@ -54,7 +54,7 @@ export default function LogIn() {
       if (role === "admin") {
         navigate("/dashboard");
       } else if (role === "kitchen") {
-        navigate("/kitchen");
+        navigate("/dishes");
       } else if (role === "waiter") {
         navigate("/dashboard");
       } else if (role === "sales") {

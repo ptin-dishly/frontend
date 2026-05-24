@@ -165,7 +165,8 @@
     "newIngredient": "Nuevo ingrediente",
     "all": "Todos",
     "category": "Categoría",
-    "allergen": "Alérgeno"
+    "allergen": "Alérgeno",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este ingrediente?"
   },
   "newIngredient": {
     "title": "Crear Nuevo Ingrediente",
@@ -173,6 +174,15 @@
     "name": "Nombre del ingrediente *",
     "namePlaceholder": "ej., Pasta lasaña",
     "description": "Descripción",
+    "descriptionPlaceholder": "ej., Tomate fresco y maduro",
+    "isActive": "Activo",
+    "allergens": "Alérgenos",
+    "nameRequired": "El nombre del ingrediente es obligatorio",
+    "createdSuccess": "Ingrediente creado exitosamente",
+    "creationFailed": "Error al crear el ingrediente",
+    "creationError": "Error al crear el ingrediente",
+    "noAllergensAvailable": "No hay alérgenos disponibles",
+    "selectedAllergens": "{{count}} alérgeno(s) seleccionado(s)",
     "descriptionPlaceholder": "Descripción opcional",
     "createButton": "Crear Ingrediente",
     "creating": "Creando...",
