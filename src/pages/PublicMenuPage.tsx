@@ -148,25 +148,26 @@ export default function PublicMenuPage() {
 
   const openMenuDetail = (menu: Menu) => {
     setSelectedMenu(menu);
+    setExcludedAllergenIds([]);
     fetchMenuItems(menu.id);
     setView("detail");
   };
 
-  const filteredMenus = useMemo(() => {
-    if (view !== "list") return [];
-    return menus.filter((menu) => {
-      const menuAllergenIds = (menusWithAllergens[menu.id] || []).map((a) => a.id);
-      return !excludedAllergenIds.some((id) => menuAllergenIds.includes(id));
-    });
-  }, [menus, menusWithAllergens, excludedAllergenIds, view]);
-
-  const allergenPool = useMemo(() => {
+  const detailAllergenPool = useMemo(() => {
     return Array.from(
       new Map(
-        Object.values(menusWithAllergens).flat().map((a) => [a.id, a])
+        menuItems.flatMap((item) => item.allergens ?? []).map((a) => [a.id, a])
       ).values()
     );
-  }, [menusWithAllergens]);
+  }, [menuItems]);
+
+  const filteredMenuItems = useMemo(() => {
+    if (excludedAllergenIds.length === 0) return menuItems;
+    return menuItems.filter((item) => {
+      const itemAllergenIds = (item.allergens ?? []).map((a) => a.id);
+      return !excludedAllergenIds.some((id) => itemAllergenIds.includes(id));
+    });
+  }, [menuItems, excludedAllergenIds]);
 
   const CATEGORY_ORDER = ["entrante", "primer_plato", "segundo_plato", "postre", "salsa", "bebida"];
 
@@ -227,45 +228,6 @@ export default function PublicMenuPage() {
             </div>
           </div>
 
-          {/* Allergen filter bar */}
-          {allergenPool.length > 0 && (
-            <div style={{
-              padding: "10px 16px",
-              borderBottom: "1px solid #F3E8D0",
-              display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
-            }}>
-              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {allergenPool.map((a) => {
-                  const active = excludedAllergenIds.includes(a.id);
-                  return (
-                    <button
-                      key={a.id}
-                      onClick={() =>
-                        setExcludedAllergenIds((prev) =>
-                          active ? prev.filter((id) => id !== a.id) : [...prev, a.id]
-                        )
-                      }
-                      title={a.nameEs}
-                      style={{
-                        background: active ? "#78350F" : "#F3E8D0",
-                        border: active ? "2px solid #78350F" : "2px solid transparent",
-                        borderRadius: 8, padding: "4px 6px",
-                        cursor: "pointer", display: "flex",
-                        alignItems: "center", gap: 4,
-                        opacity: active ? 1 : 0.75,
-                      }}
-                    >
-                      {ALLERGEN_ICONS[a.code]
-                        ? <img src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} style={{ width: 20, height: 20, objectFit: "contain", filter: active ? "brightness(0) invert(1)" : "none" }} />
-                        : <span style={{ fontSize: 10, fontWeight: 700, color: active ? "white" : "#78350F" }}>{a.code}</span>
-                      }
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Error */}
           {error && (
             <p style={{ color: "#92400E", padding: "16px 20px", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
@@ -283,12 +245,12 @@ export default function PublicMenuPage() {
           {/* Menu card list */}
           {!loading && (
             <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              {filteredMenus.length === 0 && (
+              {menus.length === 0 && (
                 <p style={{ textAlign: "center", color: "#78716C", fontFamily: "Georgia, serif", fontStyle: "italic", padding: "24px 0" }}>
                   {t("menus.notFound")}
                 </p>
               )}
-              {filteredMenus.map((menu) => {
+              {menus.map((menu) => {
                 const menuAllergens = menusWithAllergens[menu.id] || [];
                 return (
                   <div
@@ -337,7 +299,7 @@ export default function PublicMenuPage() {
   }
 
   // Detail view
-  const grouped = menuItems.reduce<Record<string, MenuItemWithAllergens[]>>((acc, item) => {
+  const grouped = filteredMenuItems.reduce<Record<string, MenuItemWithAllergens[]>>((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
@@ -362,10 +324,43 @@ export default function PublicMenuPage() {
           </button>
           <h1 style={{
             fontSize: 20, fontWeight: 800, color: "#1C1917",
-            fontFamily: "Georgia, serif", margin: "0 0 12px",
+            fontFamily: "Georgia, serif", margin: "0 0 10px",
           }}>
             {selectedMenu ? t(`dishes.menuNames.${selectedMenu.name}`, { defaultValue: selectedMenu.name }) : ""}
           </h1>
+
+          {/* Allergen filter — only inside a menu */}
+          {detailAllergenPool.length > 0 && (
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", paddingBottom: 10 }}>
+              {detailAllergenPool.map((a) => {
+                const active = excludedAllergenIds.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() =>
+                      setExcludedAllergenIds((prev) =>
+                        active ? prev.filter((id) => id !== a.id) : [...prev, a.id]
+                      )
+                    }
+                    title={a.nameEs}
+                    style={{
+                      background: active ? "#78350F" : "#F3E8D0",
+                      border: active ? "2px solid #78350F" : "2px solid transparent",
+                      borderRadius: 8, padding: "4px 6px",
+                      cursor: "pointer", display: "flex",
+                      alignItems: "center", gap: 4,
+                      opacity: active ? 1 : 0.75,
+                    }}
+                  >
+                    {ALLERGEN_ICONS[a.code]
+                      ? <img src={ALLERGEN_ICONS[a.code]} alt={a.nameEs} style={{ width: 20, height: 20, objectFit: "contain", filter: active ? "brightness(0) invert(1)" : "none" }} />
+                      : <span style={{ fontSize: 10, fontWeight: 700, color: active ? "white" : "#78350F" }}>{a.code}</span>
+                    }
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Loading */}
