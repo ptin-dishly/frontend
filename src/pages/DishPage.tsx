@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { recipeService, recipeStepService, allergenService, type Recipe, type Allergen, type RecipeStep } from "../services/api";
+import { recipeService, recipeStepService, type Recipe, type Allergen, type RecipeStep } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import SelectDropdown from "../components/SelectDropdown";
