@@ -205,9 +205,9 @@ export default function DishPage() {
         name: editingData.name,
         description: editingData.description,
         category: editingData.category,
-        preparationTime: editingData.preparationTime,
-        servings: editingData.servings,
-        portionSizeKg: editingData.portionSizeKg,
+        preparationTime: Number(editingData.preparationTime),
+        servings: Number(editingData.servings),
+        portionSizeKg: Number(editingData.portionSizeKg),
       });
       if (res.success && res.data) {
         setDishes((prev) => prev.map((d) => (d.id === dishId ? res.data! : d)));
