@@ -34,7 +34,7 @@ export default function IngredientsPage() {
     return null;
   }
 
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [ingredients, setIngredients] = useState<(Ingredient & { allergens: Allergen[] })[]>([]);
   const [allAllergens, setAllAllergens] = useState<Allergen[]>([]);
   const [globalSearch, setGlobalSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -45,7 +45,6 @@ export default function IngredientsPage() {
   const [editingData, setEditingData] = useState<Partial<Ingredient> | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [ingredientAllergens, setIngredientAllergens] = useState<Record<string, Allergen[]>>({});
 
   const allergenImageMap: Record<string, string> = {
     "GLU": glutenImg,
@@ -69,24 +68,28 @@ export default function IngredientsPage() {
       setLoading(true);
       setError(null);
       try {
+        // Obtener todos los alérgenos disponibles
         const allergenRes = await allergenService.getAll();
-        if (allergenRes.success && allergenRes.data) setAllAllergens(allergenRes.data);
-
-        const res = await ingredientService.getAll();
+        const allergensData = allergenRes.success ? allergenRes.data : [];
+        if (allergensData) setAllAllergens(allergensData);
+  
+        // Crear un Map de allergenId -> Allergen (con code) ANTES de usarlo
+        const allergenMap = new Map(
+          allergensData.map((a: Allergen) => [a.id, a])
+        );
+  
+        // Obtener ingredientes CON alérgenos en una sola llamada
+        const res = await ingredientService.getAllWithAllergens();
         if (res.success && res.data) {
-          setIngredients(res.data);
-          const allergenMap: Record<string, Allergen[]> = {};
-          await Promise.all(
-            res.data.map(async (ingredient) => {
-              try {
-                const allergenRes = await allergenService.getByIngredient(ingredient.id);
-                if (allergenRes.success && allergenRes.data) allergenMap[ingredient.id] = allergenRes.data;
-              } catch (err) {
-                console.error(`Error fetching allergens for ingredient ${ingredient.id}:`, err);
-              }
-            })
-          );
-          setIngredientAllergens(allergenMap);
+          // Mapear cada ingrediente y sus alérgenos
+          const mappedIngredients = res.data.map((ingredient: any) => ({
+            ...ingredient,
+            allergens: (ingredient.allergens || [])
+              .map((ia: any) => allergenMap.get(ia.allergenId))
+              .filter((a: Allergen | undefined): a is Allergen => a !== undefined),
+          }));
+  
+          setIngredients(mappedIngredients);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -95,7 +98,7 @@ export default function IngredientsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, []);
 
@@ -108,7 +111,7 @@ export default function IngredientsPage() {
     const matchesSearch = ingredient.name.toLowerCase().includes(globalSearch.toLowerCase());
     const matchesCategory = !categoryFilter || ingredient.name === categoryFilter;
     const matchesAllergen = !allergenFilter ||
-      (ingredientAllergens[ingredient.id] && ingredientAllergens[ingredient.id].some(a => a.id === allergenFilter));
+      (ingredient.allergens && ingredient.allergens.some(a => a.id === allergenFilter));
     return matchesSearch && matchesCategory && matchesAllergen;
   });
 
@@ -123,7 +126,7 @@ export default function IngredientsPage() {
     try {
       const res = await ingredientService.update(ingredientId, editingData);
       if (res.success && res.data) {
-        setIngredients((prev) => prev.map((i) => (i.id === ingredientId ? res.data! : i)));
+        setIngredients((prev) => prev.map((i) => (i.id === ingredientId ? { ...res.data!, allergens: (ingredients.find(ing => ing.id === ingredientId)?.allergens || []) } : i)));
         setEditingId(null);
         setEditingData(null);
       } else {
@@ -282,14 +285,14 @@ export default function IngredientsPage() {
                         </div>
 
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                          {ingredientAllergens[ingredient.id] && ingredientAllergens[ingredient.id].length > 0 ? (
-                            ingredientAllergens[ingredient.id].map((allergen) => (
+                          {ingredient.allergens && ingredient.allergens.length > 0 ? (
+                            ingredient.allergens.map((allergen) => (
                               <div key={allergen.id} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "4px 6px", borderRadius: 6, backgroundColor: "#F9F5FF", border: "1px solid #E9D5FF", cursor: "default" }} title={allergen.nameEs}>
                                 {allergenImageMap[allergen.code] ? (
-                                  <img src={allergenImageMap[allergen.code]} alt={allergen.code} style={{ width: 20, height: 20, objectFit: "contain" }} />
+                                  <img src={allergenImageMap[allergen.code]} alt={allergen.nameEs} style={{ width: 20, height: 20, objectFit: "contain" }} />
                                 ) : (
                                   <div style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#E9D5FF", borderRadius: 4, fontWeight: 700, color: "#7C3AED", fontSize: 9 }}>
-                                    {allergen.code}
+                                    {allergen.nameEs?.charAt(0).toUpperCase()}
                                   </div>
                                 )}
                               </div>

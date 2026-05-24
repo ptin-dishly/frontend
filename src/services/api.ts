@@ -199,8 +199,8 @@ export interface IngredientAllergen {
   id: string;
   ingredientId: string;
   allergenId: string;
-  nameEs?: string;
-  allergen?: Allergen;
+  presence: string;
+  allergen: Allergen;
 }
 
 export interface Ingredient {
@@ -209,7 +209,7 @@ export interface Ingredient {
   description: string | null;
   isActive: boolean;
   establishmentId: string;
-  allergens?: IngredientAllergen[];
+  allergens?: Allergen[];
   createdAt: string;
   updatedAt: string;
 }
@@ -253,6 +253,7 @@ export const allergenService = {
 
 export const ingredientService = {
   getAll: () => api<Ingredient[]>("/ingredients"),
+  getAllWithAllergens: () => api<Array<Ingredient & { allergens: Allergen[] }>>("/ingredients/with-allergens"),
   getById: (id: string) => api<Ingredient>(`/ingredients/${id}`),
   getAllergens: (ingredientId: string) =>
     api<IngredientAllergen[]>(`/ingredients/${ingredientId}/allergens`),
