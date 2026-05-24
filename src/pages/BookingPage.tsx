@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-
 import { getCurrentUser } from "../utils/storage";
 import { bookingService, type Booking } from "../services/api";
 import MenuBar from "../components/MenuBar";
@@ -33,6 +32,7 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -65,20 +65,16 @@ export default function BookingsPage() {
     return matchesStatus && matchesSearch;
   });
 
-  /*
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed": return "#22C55E";
-      case "pending": return "#F59E0B";
-      case "cancelled": return "#EF4444";
-      default: return "#6B7280";
-    }
-  };
-  */
-
   const selectedBooking = bookings.find((b) => b.id === selectedBookingId);
 
   const updateBookingStatus = async (bookingId: string, newStatus: Booking["status"]) => {
+    // Si la reserva está cancelada, no permitir cambiar el estado
+    if (selectedBooking?.status === "cancelled") {
+      setError("Cannot update a cancelled booking");
+      return;
+    }
+
+    setUpdatingStatus(true);
     try {
       const res = await bookingService.updateStatus(bookingId, newStatus);
       if (res.success && res.data) {
@@ -89,6 +85,9 @@ export default function BookingsPage() {
       }
     } catch (err) {
       console.error("Error updating booking status:", err);
+      setError("Failed to update booking status");
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -153,7 +152,7 @@ export default function BookingsPage() {
             onClick={() => setSelectedBookingId(null)}
           >
             <div
-              style={{ backgroundColor: "white", borderRadius: 16, padding: 32, maxWidth: 600, width: "90%" }}
+              style={{ backgroundColor: "white", borderRadius: 16, padding: 32, maxWidth: 600, width: "90%", maxHeight: "90vh", overflowY: "auto" }}
               onClick={(e) => e.stopPropagation()}
             >
               <h2 style={{ margin: "0 0 20px", color: "#0F172A" }}>
@@ -161,36 +160,145 @@ export default function BookingsPage() {
               </h2>
 
               <div style={{ marginBottom: 20 }}>
-                <p style={{ color: "#6B7280", fontSize: 14 }}><strong>{t("bookings.nameLabel")}</strong> {selectedBooking.name}</p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}><strong>{t("bookings.emailLabel")}</strong> {selectedBooking.email}</p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}><strong>{t("bookings.phoneLabel")}</strong> {selectedBooking.phone}</p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}><strong>{t("bookings.dateLabel")}</strong> {selectedBooking.date}</p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}><strong>{t("bookings.timeLabel")}</strong> {selectedBooking.time}</p>
-                <p style={{ color: "#6B7280", fontSize: 14 }}><strong>{t("bookings.guestsLabel")}</strong> {selectedBooking.guests}</p>
+                <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                  <strong>{t("bookings.nameLabel")}:</strong> {selectedBooking.name}
+                </p>
+                <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                  <strong>{t("bookings.emailLabel")}:</strong> {selectedBooking.email}
+                </p>
+                <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                  <strong>{t("bookings.phoneLabel")}:</strong> {selectedBooking.phone}
+                </p>
+                <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                  <strong>{t("bookings.dateLabel")}:</strong> {selectedBooking.date}
+                </p>
+                <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                  <strong>{t("bookings.timeLabel")}:</strong> {selectedBooking.time}
+                </p>
+                <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                  <strong>{t("bookings.guestsLabel")}:</strong> {selectedBooking.guests}
+                </p>
                 {selectedBooking.specialRequests && (
-                  <p style={{ color: "#6B7280", fontSize: 14 }}>
-                    <strong>{t("bookings.specialRequestsLabel")}</strong> {selectedBooking.specialRequests}
+                  <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                    <strong>{t("bookings.specialRequestsLabel")}:</strong> {selectedBooking.specialRequests}
                   </p>
                 )}
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #E5E7EB" }}>
+                  <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 8px" }}>
+                    <strong>{t("bookings.status")}:</strong>
+                  </p>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginTop: 8,
+                      backgroundColor:
+                        selectedBooking.status === "confirmed"
+                          ? "#22C55E"
+                          : selectedBooking.status === "pending"
+                          ? "#F59E0B"
+                          : "#EF4444",
+                      color: "white",
+                      padding: "6px 12px",
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {selectedBooking.status === "confirmed"
+                      ? t("bookings.confirmed")
+                      : selectedBooking.status === "pending"
+                      ? t("bookings.pending")
+                      : t("bookings.cancelled")}
+                  </span>
+                </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {selectedBooking.status !== "confirmed" && (
-                  <button onClick={() => updateBookingStatus(selectedBooking.id, "confirmed")} style={{ padding: "12px 16px", backgroundColor: "#22C55E", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("bookings.confirmBooking")}
-                  </button>
+                {selectedBooking.status === "cancelled" ? (
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      backgroundColor: "#FEE2E2",
+                      border: "1px solid #FECACA",
+                      borderRadius: 8,
+                      color: "#DC2626",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textAlign: "center",
+                    }}
+                  >
+                    {t("bookings.cancelledMessage")}
+                  </div>
+                ) : (
+                  <>
+                    {selectedBooking.status !== "confirmed" && (
+                      <button
+                        onClick={() => updateBookingStatus(selectedBooking.id, "confirmed")}
+                        disabled={updatingStatus}
+                        style={{
+                          padding: "12px 16px",
+                          backgroundColor: "#22C55E",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontWeight: 600,
+                          cursor: updatingStatus ? "not-allowed" : "pointer",
+                          opacity: updatingStatus ? 0.6 : 1,
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {t("bookings.confirmBooking")}
+                      </button>
+                    )}
+                    {selectedBooking.status !== "pending" && (
+                      <button
+                        onClick={() => updateBookingStatus(selectedBooking.id, "pending")}
+                        disabled={updatingStatus}
+                        style={{
+                          padding: "12px 16px",
+                          backgroundColor: "#F59E0B",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontWeight: 600,
+                          cursor: updatingStatus ? "not-allowed" : "pointer",
+                          opacity: updatingStatus ? 0.6 : 1,
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {t("bookings.markPending")}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => updateBookingStatus(selectedBooking.id, "cancelled")}
+                      disabled={updatingStatus}
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#EF4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontWeight: 600,
+                        cursor: updatingStatus ? "not-allowed" : "pointer",
+                        opacity: updatingStatus ? 0.6 : 1,
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      {t("bookings.cancelBooking")}
+                    </button>
+                  </>
                 )}
-                {selectedBooking.status !== "pending" && (
-                  <button onClick={() => updateBookingStatus(selectedBooking.id, "pending")} style={{ padding: "12px 16px", backgroundColor: "#F59E0B", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("bookings.markPending")}
-                  </button>
-                )}
-                {selectedBooking.status !== "cancelled" && (
-                  <button onClick={() => updateBookingStatus(selectedBooking.id, "cancelled")} style={{ padding: "12px 16px", backgroundColor: "#EF4444", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
-                    {t("bookings.cancelBooking")}
-                  </button>
-                )}
-                <button onClick={() => setSelectedBookingId(null)} style={{ padding: "12px 16px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
+                <button
+                  onClick={() => setSelectedBookingId(null)}
+                  style={{
+                    padding: "12px 16px",
+                    backgroundColor: "#E5E7EB",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
                   {t("common.close")}
                 </button>
               </div>
