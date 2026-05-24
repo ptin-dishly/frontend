@@ -324,7 +324,7 @@ export default function DishDetailPage() {
                   />
                 ) : (
                   <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
-                    {dish.category}
+                    {dish.category?.replace(/_/g, " ")}
                   </p>
                 )}
               </div>
@@ -481,7 +481,7 @@ export default function DishDetailPage() {
                       </p>
                     </div>
                     <div style={{ fontSize: 13, color: "#0F172A" }}>
-                      {ingredient.quantity} {ingredient.unit}
+                      {Number(ingredient.quantity).toFixed(2)} {ingredient.unit}
                     </div>
                     <div>
                       <span
