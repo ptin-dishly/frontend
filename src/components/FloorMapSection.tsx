@@ -23,6 +23,7 @@ interface Table {
   shape: "rect" | "round"; number: number | string;
   merged: boolean; chairs: Chair[];
   dbId?: string;
+  _originalTables?: [Table, Table];
 }
 interface FloorData {
   tables: Record<string, Table[]>;
@@ -732,7 +733,9 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
       const merged: Table = {
         id: uid(), shape: "rect", x: minX, y: minY,
         w: Math.max(t1.x + t1.w, b.x + b.w) - minX, h: Math.max(t1.y + t1.h, b.y + b.h) - minY,
-        number: `${t1.number}+${b.number}`, merged: true, chairs: [...t1.chairs.map(c => ({ ...c })), ...b.chairs.map(c => ({ ...c }))]
+        number: `${t1.number}+${b.number}`, merged: true,
+        chairs: [...t1.chairs.map(c => ({ ...c })), ...b.chairs.map(c => ({ ...c }))],
+        _originalTables: [{ ...t1, chairs: t1.chairs.map(c => ({ ...c })) }, { ...b, chairs: b.chairs.map(c => ({ ...c })) }],
       };
       return [...prev.filter(t => t.id !== t1.id && t.id !== b.id), merged];
     });
@@ -745,12 +748,18 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
     const z = zoneRef.current, ts = dataRef.current.tables[z] ?? [], t = ts.find(t => t.id === id);
     if (!t || !t.merged) { showToast("Aquesta taula no està unida"); return; }
     pushHistory();
-    const wide = t.w >= t.h, hw = wide ? t.w / 2 : t.w, hh = wide ? t.h : t.h / 2;
     setData(prev => {
-      const num = prev.nextNum[z] ?? 1;
-      const make = (x: number, y: number, n: number): Table => ({ id: uid(), x, y, w: hw, h: hh, shape: "rect", number: n, merged: false, chairs: [{ id: uid(), side: "top", pos: .5 }, { id: uid(), side: "bottom", pos: .5 }] });
-      const t1 = make(t.x, t.y, num), t2 = make(wide ? t.x + hw : t.x, wide ? t.y : t.y + hh, num + 1);
-      const next = { ...prev, tables: { ...prev.tables, [z]: [...(prev.tables[z] ?? []).filter(x => x.id !== t.id), t1, t2] }, nextNum: { ...prev.nextNum, [z]: num + 2 } };
+      let t1: Table, t2: Table;
+      if (t._originalTables) {
+        [t1, t2] = t._originalTables.map(orig => ({ ...orig, id: uid() })) as [Table, Table];
+      } else {
+        const wide = t.w >= t.h, hw = wide ? t.w / 2 : t.w, hh = wide ? t.h : t.h / 2;
+        const num = prev.nextNum[z] ?? 1;
+        const make = (x: number, y: number, n: number): Table => ({ id: uid(), x, y, w: hw, h: hh, shape: "rect", number: n, merged: false, chairs: [{ id: uid(), side: "top", pos: .5 }, { id: uid(), side: "bottom", pos: .5 }] });
+        t1 = make(t.x, t.y, num);
+        t2 = make(wide ? t.x + hw : t.x, wide ? t.y : t.y + hh, num + 1);
+      }
+      const next = { ...prev, tables: { ...prev.tables, [z]: [...(prev.tables[z] ?? []).filter(x => x.id !== t.id), t1, t2] } };
       saveFloorData(next); setSelId(null); setSelType(null);
       return next;
     });
