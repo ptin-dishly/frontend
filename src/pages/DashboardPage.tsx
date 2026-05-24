@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { getCurrentUser, getAccessToken } from "../utils/storage";
+import { orderService } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import SearchBar from "../components/SearchBar";
 import BigButton from "../components/BigButton";
@@ -36,6 +38,7 @@ export default function DashboardPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const canSeeMap = userRole === "admin" || userRole === "waiter";
 
@@ -139,6 +142,11 @@ export default function DashboardPage() {
                     tableNumber={order.tableNumber ?? "—"}
                     items={order.items}
                     total={order.total}
+                    onView={() => navigate("/orders")}
+                    onPay={async () => {
+                      await orderService.close(order.id);
+                      refresh();
+                    }}
                   />
                 </div>
               ))}

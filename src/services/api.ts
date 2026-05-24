@@ -509,6 +509,11 @@ export const orderService = {
     api<void>(`/orders/${id}`, {
       method: "DELETE",
     }),
+
+  close: (id: string) =>
+    api<void>(`/orders/${id}/close`, {
+      method: "PATCH",
+    }),
 };
 // ============================================================================
 // BOOKINGS (FAKE DATA - No API endpoint)
