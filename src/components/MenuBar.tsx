@@ -132,7 +132,6 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
             }}
           >
             <h3 style={{ margin: "0 0 8px", color: "#0F172A" }}>{t("menus.qrTitle")}</h3>
-            <p style={{ margin: "0 0 14px", color: "#64748B", fontSize: 14 }}>{t("menus.qrDescription")}</p>
 
             <div
               style={{

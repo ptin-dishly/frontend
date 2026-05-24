@@ -89,7 +89,8 @@
     "tagline": "Market cuisine",
     "restaurantNotFound": "Restaurant not found",
     "noMenusFound": "No menus available for this restaurant",
-    "loadError": "Failed to load menu"
+    "loadError": "Failed to load menu",
+    "qrTitle": "Scan the QR code to view the menu"
   },
   "dishes": {
     "title": "Dishes",
@@ -169,14 +170,15 @@
   },
   "newIngredient": {
     "title": "Create New Ingredient",
-    "backToIngredients": "Back to Ingredients",
-    "name": "Ingredient Name *",
-    "namePlaceholder": "e.g., Lasagna pasta",
+    "name": "Ingredient Name",
+    "namePlaceholder": "e.g., Tomato",
     "description": "Description",
-    "descriptionPlaceholder": "Optional description",
-    "createButton": "Create Ingredient",
-    "creating": "Creating...",
-    "backendNotice": "This feature will be saved to the backend once the endpoint is ready."
+    "isActive": "Active",
+    "descriptionPlaceholder": "e.g., Fresh ripe tomato",
+    "nameRequired": "Ingredient name is required",
+    "createdSuccess": "Ingredient created successfully",
+    "creationFailed": "Failed to create ingredient",
+    "creationError": "Error creating ingredient"
   },
   "orders": {
     "title": "Kitchen Orders",

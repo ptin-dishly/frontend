@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
+import { ingredientService } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
 
@@ -18,94 +19,234 @@ export default function NewIngredientPage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isActive, setIsActive] = useState(true); // ← AGREGAR
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(false);
 
-    if (!name) {
-      setError("Please fill in ingredient name");
+    if (!name.trim()) {
+      setError(t("newIngredient.nameRequired"));
       return;
     }
 
     setLoading(true);
     try {
-      console.log("Creating ingredient (using fake data):", { name, description });
-      setTimeout(() => {
-        navigate("/ingredients");
-      }, 1000);
+      console.log("📝 Creating ingredient:", { name, description, isActive });
+      
+      const res = await ingredientService.create({
+        name: name.trim(),
+        description: description.trim() || null,
+        isActive, // ← AGREGAR
+      });
+
+      if (res.success && res.data) {
+        console.log("✅ Ingredient created:", res.data);
+        setSuccess(true);
+        
+        // Limpiar formulario
+        setName("");
+        setDescription("");
+        setIsActive(true);
+
+        // Redirigir después de 1.5 segundos
+        setTimeout(() => {
+          navigate("/ingredients");
+        }, 1500);
+      } else {
+        setError(res.error?.message || t("newIngredient.creationFailed"));
+      }
     } catch (err) {
-      setError("Failed to create ingredient");
-      console.error(err);
+      const errorMsg = err instanceof Error ? err.message : t("newIngredient.creationError");
+      setError(errorMsg);
+      console.error("❌ Error creating ingredient:", err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
       <MenuBar role={userRole} />
 
       <main style={{ flex: 1, padding: "40px 48px" }}>
-        <BackButton label="Back to Ingredients" />
+        <BackButton label={t("common.back")} />
 
-        <h1 style={{ fontSize: 32, color: "#0F172A", margin: "20px 0" }}>
+        <h1 style={{ fontSize: 32, color: "#0F172A", margin: "20px 0", fontWeight: 700 }}>
           {t("newIngredient.title")}
         </h1>
 
-        <div style={{ backgroundColor: "#FEF3C7", color: "#92400E", padding: "12px 16px", borderRadius: "8px", marginBottom: "24px", fontSize: "13px" }}>
-          ℹ️ {t("newIngredient.backendNotice")}
-        </div>
-
         {error && (
-          <div style={{ backgroundColor: "#FEE2E2", color: "#DC2626", padding: "16px", borderRadius: "8px", marginBottom: "24px", fontSize: "14px" }}>
+          <div
+            style={{
+              backgroundColor: "#FEE2E2",
+              color: "#DC2626",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+              fontSize: "14px",
+            }}
+          >
             ⚠️ {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ maxWidth: 500, display: "flex", flexDirection: "column", gap: 20 }}>
+        {success && (
+          <div
+            style={{
+              backgroundColor: "#D1FAE5",
+              color: "#065F46",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+              fontSize: "14px",
+            }}
+          >
+            ✅ {t("newIngredient.createdSuccess")}
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            backgroundColor: "white",
+            padding: "32px",
+            borderRadius: "12px",
+            border: "1px solid #E5E7EB",
+            maxWidth: 600,
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }}
+        >
+          {/* Name */}
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: "#0F172A" }}>
-              {t("newIngredient.name")}
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: 600,
+                color: "#0F172A",
+              }}
+            >
+              {t("newIngredient.name")} *
             </label>
             <input
               type="text"
-              placeholder={t("newIngredient.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }}
+              placeholder={t("newIngredient.namePlaceholder")}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "6px",
+                border: "1px solid #E5E7EB",
+                fontSize: "14px",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
               required
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: "#0F172A" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: 600,
+                color: "#0F172A",
+              }}
+            >
               {t("newIngredient.description")}
             </label>
             <textarea
-              placeholder={t("newIngredient.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", minHeight: 100 }}
+              placeholder={t("newIngredient.descriptionPlaceholder")}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "6px",
+                border: "1px solid #E5E7EB",
+                fontSize: "14px",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+                minHeight: "100px",
+                resize: "vertical",
+              }}
             />
           </div>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+          {/* Active Status - NUEVO */}
+          <div>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontWeight: 600,
+                color: "#0F172A",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                disabled={loading}
+                style={{
+                  width: 18,
+                  height: 18,
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              />
+              {t("newIngredient.isActive")}
+            </label>
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
             <button
               type="button"
               onClick={() => navigate("/ingredients")}
-              style={{ flex: 1, padding: "12px 24px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 14 }}
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                backgroundColor: "#E5E7EB",
+                border: "none",
+                borderRadius: "8px",
+                fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+              }}
             >
               {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              style={{ flex: 1, padding: "12px 24px", backgroundColor: loading ? "#9CA3AF" : "#22C55E", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontSize: 14 }}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                backgroundColor: "#22C55E",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+              }}
             >
-              {loading ? t("newIngredient.creating") : t("newIngredient.createButton")}
+              {loading ? t("common.creating") : t("common.create")}
             </button>
           </div>
         </form>

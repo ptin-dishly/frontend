@@ -89,7 +89,8 @@
     "tagline": "Cuina catalana de mercat",
     "restaurantNotFound": "Restaurant no trobat",
     "noMenusFound": "No hi ha menús disponibles per a aquest restaurant",
-    "loadError": "Error en carregar el menú"
+    "loadError": "Error en carregar el menú",
+    "qrTitle": "Escaneja el codi QR per veure el menú"
   },
   "dishes": {
     "title": "Plats",
@@ -167,16 +168,17 @@
     "category": "Categoria",
     "allergen": "Al·lèrgen"
   },
-  "newIngredient": {
+"newIngredient": {
     "title": "Crear Nou Ingredient",
-    "backToIngredients": "Tornar als Ingredients",
-    "name": "Nom de l'ingredient *",
-    "namePlaceholder": "ex., Pasta lasanya",
+    "name": "Nom de l'ingredient",
+    "namePlaceholder": "ex., Tomàquet",
     "description": "Descripció",
-    "descriptionPlaceholder": "Descripció opcional",
-    "createButton": "Crear Ingredient",
-    "creating": "Creant...",
-    "backendNotice": "Aquesta funció es guardarà al backend un cop l'endpoint estigui llest."
+    "isActive": "Actiu",
+    "descriptionPlaceholder": "ex., Tomàquet fresc i madur",
+    "nameRequired": "El nom de l'ingredient és obligatori",
+    "createdSuccess": "Ingredient creat exitosament",
+    "creationFailed": "Error al crear l'ingredient",
+    "creationError": "Error al crear l'ingredient"
   },
   "orders": {
     "title": "Comandes de Cuina",
