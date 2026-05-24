@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { menuService, recipeService, userService, type Recipe } from "../services/api";
+import { menuService, recipeService, type Recipe } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
 
@@ -50,13 +50,11 @@ useEffect(() => {
   const fetchData = async () => {
     setRecipesLoading(true);
     try {
-      // Obtener establishment ID del usuario CON getMe
-      const userRes = await userService.getMe();
-      if (userRes.success && userRes.data) {
-        const estId = userRes.data.establishmentId;
+      const currentUser = getCurrentUser();
+      const estId = currentUser?.establishmentId;
+      if (estId) {
         setEstablishmentId(estId);
-        
-        // Obtener recipes del establishment
+
         const recipesRes = await recipeService.getByEstablishment(estId);
         if (recipesRes.success && recipesRes.data) {
           setRecipes(recipesRes.data);

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
-import { recipeService, ingredientService, userService, type Ingredient } from "../services/api";
+import { recipeService, ingredientService, type Ingredient } from "../services/api";
 import MenuBar from "../components/MenuBar";
 import BackButton from "../components/BackButton";
 
@@ -55,9 +55,9 @@ export default function RecipeCreatePage() {
     const fetchData = async () => {
       setIngredientsLoading(true);
       try {
-        const userRes = await userService.getMe();
-        if (userRes.success && userRes.data) {
-          setEstablishmentId(userRes.data.establishmentId);
+        const currentUser = getCurrentUser();
+        if (currentUser?.establishmentId) {
+          setEstablishmentId(currentUser.establishmentId);
         } else {
           setError("Failed to get user information");
           setIngredientsLoading(false);

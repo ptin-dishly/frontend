@@ -12,9 +12,11 @@ interface OrderCardProps {
   tableNumber: string;
   items: OrderItem[];
   total: number;
+  onView?: () => void;
+  onPay?: () => void;
 }
 
-export default function OrderCard({ orderId, tableNumber, items, total }: OrderCardProps) {
+export default function OrderCard({ orderId, tableNumber, items, total, onView, onPay }: OrderCardProps) {
   const { t } = useTranslation();
 
   return (
@@ -56,6 +58,7 @@ export default function OrderCard({ orderId, tableNumber, items, total }: OrderC
 
       <div style={{ display: "flex", gap: 10 }}>
         <button
+          onClick={onView}
           style={{
             flex: 1,
             padding: "10px",
@@ -71,6 +74,7 @@ export default function OrderCard({ orderId, tableNumber, items, total }: OrderC
           {t("orderCard.view")}
         </button>
         <button
+          onClick={onPay}
           style={{
             flex: 1,
             padding: "10px",

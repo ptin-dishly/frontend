@@ -89,8 +89,7 @@
     "tagline": "Cocina de mercado",
     "restaurantNotFound": "Restaurante no encontrado",
     "noMenusFound": "No hay menús disponibles para este restaurante",
-    "loadError": "Error al cargar el menú",
-    "qrTitle": "Escanea el codi QR para ver el menu"
+    "loadError": "Error al cargar el menú"
   },
   "dishes": {
     "title": "Platos",
@@ -171,8 +170,9 @@
   },
   "newIngredient": {
     "title": "Crear Nuevo Ingrediente",
-    "name": "Nombre del ingrediente",
-    "namePlaceholder": "ej., Tomate",
+    "backToIngredients": "Volver a Ingredientes",
+    "name": "Nombre del ingrediente *",
+    "namePlaceholder": "ej., Pasta lasaña",
     "description": "Descripción",
     "descriptionPlaceholder": "ej., Tomate fresco y maduro",
     "isActive": "Activo",
@@ -182,7 +182,12 @@
     "creationFailed": "Error al crear el ingrediente",
     "creationError": "Error al crear el ingrediente",
     "noAllergensAvailable": "No hay alérgenos disponibles",
-    "selectedAllergens": "{{count}} alérgeno(s) seleccionado(s)"
+    "selectedAllergens": "{{count}} alérgeno(s) seleccionado(s)",
+    "descriptionPlaceholder": "Descripción opcional",
+    "createButton": "Crear Ingrediente",
+    "creating": "Creando...",
+    "backendNotice": "Esta función se guardará en el backend una vez el endpoint esté listo.",
+    "fillInName": "Por favor, rellena el nombre del ingrediente"
   },
   "orders": {
     "title": "Comandas de Cocina",
