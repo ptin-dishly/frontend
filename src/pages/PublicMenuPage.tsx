@@ -234,9 +234,6 @@ export default function PublicMenuPage() {
               borderBottom: "1px solid #F3E8D0",
               display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
             }}>
-              <span style={{ fontSize: 11, color: "#92400E", fontWeight: 600, whiteSpace: "nowrap" }}>
-                {t("dishes.excludeAllergen")}
-              </span>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {allergenPool.map((a) => {
                   const active = excludedAllergenIds.includes(a.id);
@@ -313,7 +310,7 @@ export default function PublicMenuPage() {
                   >
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: "0 0 2px", fontSize: 15, fontWeight: 700, color: "#1C1917", fontFamily: "Georgia, serif" }}>
-                        {menu.name}
+                        {t(`dishes.menuNames.${menu.name}`, { defaultValue: menu.name })}
                       </p>
                       <p style={{ margin: "0 0 8px", fontSize: 11, color: "#78716C", fontStyle: "italic", fontFamily: "Georgia, serif" }}>
                         {new Date(menu.createdAt).toLocaleDateString()}
@@ -367,7 +364,7 @@ export default function PublicMenuPage() {
             fontSize: 20, fontWeight: 800, color: "#1C1917",
             fontFamily: "Georgia, serif", margin: "0 0 12px",
           }}>
-            {selectedMenu?.name}
+            {selectedMenu ? t(`dishes.menuNames.${selectedMenu.name}`, { defaultValue: selectedMenu.name }) : ""}
           </h1>
         </div>
 
