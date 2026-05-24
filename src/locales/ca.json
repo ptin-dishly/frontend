@@ -71,7 +71,7 @@
     "showing": "Mostrant {{filtered}} de {{total}} menús",
     "loading": "Carregant menús...",
     "notFound": "No s'han trobat menús",
-    "createdAt": "Creat {{date}}",
+    "createdAt": "Creat",
     "public": "Públic",
     "private": "Privat",
     "publicIcon": "🌍 Públic",

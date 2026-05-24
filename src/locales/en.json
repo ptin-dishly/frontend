@@ -71,7 +71,7 @@
     "showing": "Showing {{filtered}} of {{total}} menus",
     "loading": "Loading menus...",
     "notFound": "No menus found",
-    "createdAt": "Created {{date}}",
+    "createdAt": "Created",
     "public": "Public",
     "private": "Private",
     "publicIcon": "🌍 Public",

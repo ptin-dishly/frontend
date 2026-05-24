@@ -12,6 +12,8 @@ import QRCode from "react-qr-code";
 import Logo from "./Logo";
 import UserProfile from "./UserProfile";
 import LanguageSelector from "./LanguageSelector";
+import { ESTABLISHMENTS } from "../routes";
+import { getCurrentUser } from "../utils/storage";
 
 interface MenuBarProps {
   role: "admin" | "kitchen" | "waiter" | "sales";
@@ -30,7 +32,13 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
   const { t } = useTranslation();
   const [hovered, setHovered] = useState<string | null>(null);
   const [isQrOpen, setIsQrOpen] = useState(false);
-  const qrLandingUrl = `${window.location.origin}/client/menu`;
+  const currentUser = getCurrentUser();
+  const restaurantSlug = Object.entries(ESTABLISHMENTS).find(
+    ([, v]) => v.id === currentUser?.establishmentId
+  )?.[0];
+  const qrLandingUrl = restaurantSlug
+    ? `${window.location.origin}/restaurant/${restaurantSlug}`
+    : `${window.location.origin}/restaurant`;
 
   useEffect(() => {
     if (!fixed) {
