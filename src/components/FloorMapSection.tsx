@@ -314,6 +314,8 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const dragRef = useRef<DragState | null>(null);
   const dataRef = useRef(data);
+  const saveApiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipApiSaveRef = useRef(true);
   const zoneRef = useRef(zone);
   const modeRef = useRef(mode);
   const toolRef = useRef(tool);
@@ -338,6 +340,31 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
   useEffect(() => { histRef.current = history; }, [history]);
   useEffect(() => { canvasOffsetRef.current = canvasOffset; }, [canvasOffset]);
   useEffect(() => { roomsRef.current = rooms; }, [rooms]);
+
+  // ── Carrega layout des de la BD; guarda canvis d'usuari (debounced) ────────
+  useEffect(() => {
+    apiFetch<{ tables: Record<string, Table[]>; nextNum: Record<string, number> } | null>("/floor-layout")
+      .then(layout => {
+        if (layout && layout.tables) {
+          for (const zone of Object.values(layout.tables))
+            for (const t of zone) t.shape = t.shape || "rect";
+          setData(layout);
+        }
+      })
+      .catch(() => { })
+      .finally(() => { skipApiSaveRef.current = false; });
+  }, []);
+
+  useEffect(() => {
+    if (skipApiSaveRef.current) return;
+    if (saveApiTimerRef.current) clearTimeout(saveApiTimerRef.current);
+    saveApiTimerRef.current = setTimeout(() => {
+      apiFetch("/floor-layout", {
+        method: "PUT",
+        body: JSON.stringify({ tables: data.tables, nextNum: data.nextNum }),
+      }).catch(() => { });
+    }, 1500);
+  }, [data]);
 
   // ── Toast ──────────────────────────────────────────────────────────────────
   const showToast = useCallback((msg: string) => {
