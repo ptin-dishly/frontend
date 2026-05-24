@@ -407,7 +407,7 @@ export const menuService = {
 };
 
 // ============================================================================
-// TABLES (FAKE DATA - No API endpoint)
+// TABLES (REAL API)
 // ============================================================================
 
 export interface Table {
@@ -418,33 +418,24 @@ export interface Table {
   currentOrder?: string;
 }
 
-const FAKE_TABLES: Table[] = [
-  { id: "1", number: 1, capacity: 2, status: "available" },
-  { id: "2", number: 2, capacity: 4, status: "occupied", currentOrder: "Order #001" },
-  { id: "3", number: 3, capacity: 6, status: "reserved" },
-  { id: "4", number: 4, capacity: 2, status: "available" },
-  { id: "5", number: 5, capacity: 4, status: "occupied", currentOrder: "Order #002" },
-];
-
 export const tableService = {
   getAll: async (): Promise<ApiResponse<Table[]>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, data: FAKE_TABLES });
-      }, 500);
-    });
-  },
-  getById: async (id: string): Promise<ApiResponse<Table>> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const table = FAKE_TABLES.find((t) => t.id === id);
-        if (table) {
-          resolve({ success: true, data: table });
-        } else {
-          reject(new APIError("NOT_FOUND", 404, "Table not found"));
-        }
-      }, 500);
-    });
+    const [tablesRes, activeIds] = await Promise.all([
+      api<{ id: string; tableNumber: string; capacity: number | null; establishmentId: string }[]>("/tables"),
+      api<string[]>("/orders/active-tables").catch(() => ({ success: true, data: [] as string[] })),
+    ]);
+
+    if (!tablesRes.success || !tablesRes.data) return { success: false };
+
+    const occupied = new Set((activeIds as ApiResponse<string[]>).data ?? []);
+    const tables: Table[] = tablesRes.data.map((t) => ({
+      id: t.id,
+      number: parseInt(t.tableNumber, 10) || 0,
+      capacity: t.capacity ?? 0,
+      status: occupied.has(t.id) ? "occupied" : "available",
+    }));
+
+    return { success: true, data: tables };
   },
 };
 
