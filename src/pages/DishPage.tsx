@@ -314,7 +314,7 @@ export default function DishPage() {
         <div style={{ marginBottom: 20, fontSize: 14, color: "#6B7280" }}>
           {t("dishes.showing", { filtered: filteredDishes.length, total: dishes.length })}
           {excludedAllergenIds.length > 0 &&
-            ` (excluding ${excludedAllergenIds.map((id) => allergens.find((a) => a.id === id)?.nameEs).join(", ")})`
+            ` (${t("dishes.excluding")} ${excludedAllergenIds.map((id) => allergens.find((a) => a.id === id)?.nameEs).join(", ")})`
           }
         </div>
 

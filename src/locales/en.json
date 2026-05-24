@@ -107,6 +107,7 @@
     "servings": "Servings",
     "actions": "Actions",
     "deleteConfirm": "Are you sure you want to delete this recipe?",
+    "excluding": "Excluding allergens: ",
     "menuNames": {
       "Carta Principal Temporada": "Seasonal Main Menu",
       "Gran Carta Cal Blay": "Gran Carta Cal Blay",
