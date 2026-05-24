@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
 import { tableService, type Table } from "../services/api";
@@ -10,6 +11,7 @@ export default function TablesPage() {
   const user = getCurrentUser();
   const userRole = (user?.role || "waiter") as "admin" | "kitchen" | "waiter" | "sales";
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (!["admin", "waiter", "sales"].includes(userRole)) {
     return (
@@ -60,6 +62,12 @@ export default function TablesPage() {
     return matchesStatus && matchesSearch;
   });
 
+  const openOrder = (table: Table) => {
+    if (!table.currentOrder) {
+      return;
+    }
+    navigate(`/orders?tableNumber=${table.number}`);
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case "available": return "#22C55E";
@@ -176,7 +184,9 @@ export default function TablesPage() {
                 <button onClick={() => setSelectedTable(null)} style={{ width: "100%", padding: "12px 16px", backgroundColor: "#E5E7EB", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
                   {t("common.close")}
                 </button>
-                <button style={{ width: "100%", padding: "12px 16px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
+                <button onClick={() => openOrder(selectedTable)}
+                  disabled={!selectedTable.currentOrder}
+                  style={{ width: "100%", padding: "12px 16px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>
                   {t("tables.manageOrder")}
                 </button>
               </div>

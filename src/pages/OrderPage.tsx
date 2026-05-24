@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../utils/storage";
 import {
@@ -23,6 +24,7 @@ export default function OrderPage() {
     | "sales";
 
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
 
   if (!["admin", "waiter"].includes(userRole)) {
     return (
@@ -92,6 +94,32 @@ export default function OrderPage() {
   fetchOrders();
 }, []);
 
+useEffect(() => {
+  const tableNumber = searchParams.get("tableNumber");
+
+  if (!tableNumber || orders.length === 0) {
+    return;
+  }
+
+  const orderForTable = orders.find(
+    (order) => order.tableNumber?.toString() === tableNumber
+  );
+
+  if (orderForTable) {
+    setSelectedOrderId(orderForTable.id);
+  }
+
+  // Eliminem el paràmetre de la URL perquè només serveixi per obrir la comanda una vegada
+  const newParams = new URLSearchParams(searchParams);
+  newParams.delete("tableNumber");
+
+  window.history.replaceState(
+    {},
+    "",
+    `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ""}`
+  );
+}, [searchParams, orders]);
+
 const filteredOrders = orders.filter((order) => {
   const matchesStatus =
     !filterStatus || order.status === filterStatus;
@@ -100,7 +128,7 @@ const filteredOrders = orders.filter((order) => {
     !searchTerm || order.id.includes(searchTerm);
 
   const matchesTable =
-    !filterTable || order.tableNumber === filterTable;
+  !filterTable || order.tableNumber?.toString() === filterTable;
 
   return (
     matchesStatus &&
