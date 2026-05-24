@@ -12,6 +12,7 @@ export default function DishDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
+  const isAdmin = userRole === "admin";
 
   if (!["admin", "kitchen"].includes(userRole)) {
     navigate("/dashboard");
@@ -506,70 +507,91 @@ export default function DishDetailPage() {
 
           <div style={{ display: "flex", gap: 12 }}>
             <button
-                onClick={handleShowSteps}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "var(--color-purple)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: 14,
-                }}
-              >
-                📋 {t("Steps")}
-              </button>
-            
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "var(--color-green)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: 14,
-                }}
-              >
-                {t("dishDetail.editDish")}
-              </button>
-            ) : (
+              onClick={() => navigate("/dishes")}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#E5E7EB",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              {t("common.back")}
+            </button>
+
+            <button
+              onClick={handleShowSteps}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#7C3AED",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              📋 {t("dishDetail.steps")}
+            </button>
+
+            {/* Botones editar - SOLO ADMIN */}
+            {isAdmin && (
               <>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#22C55E",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    cursor: saving ? "not-allowed" : "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  {saving ? t("common.saving") : t("common.save")}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#EF4444",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  {t("common.cancel")}
-                </button>
+                {!isEditing ? (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#22C55E",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontSize: 14,
+                    }}
+                  >
+                    {t("dishDetail.editDish")}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#16A34A",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontWeight: 600,
+                        cursor: saving ? "not-allowed" : "pointer",
+                        fontSize: 14,
+                        opacity: saving ? 0.6 : 1,
+                      }}
+                    >
+                      {saving ? t("common.saving") : t("common.save")}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#EF4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontSize: 14,
+                      }}
+                    >
+                      {t("common.cancel")}
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -604,16 +626,16 @@ export default function DishDetailPage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <h2 style={{ fontSize: 20, color: "#0F172A", margin: "0 0 24px", fontWeight: 700 }}>
-                  {dish?.name} 
+                  {dish?.name} - {t("dishDetail.steps")}
                 </h2>
 
                 {stepsLoading ? (
                   <div style={{ textAlign: "center", padding: "20px", color: "#6B7280" }}>
-                    <p>{t("common.loading") || "Loading steps..."}</p>
+                    <p>{t("common.loading")}</p>
                   </div>
                 ) : steps.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "20px", color: "#6B7280" }}>
-                    <p>{t("dishDetail.noSteps") || "No recipe steps available"}</p>
+                    <p>{t("dishDetail.noSteps")}</p>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -624,13 +646,13 @@ export default function DishDetailPage() {
                           backgroundColor: "#F9FAFB",
                           padding: 16,
                           borderRadius: 8,
-                          borderLeft: "4px solid var(--color-purple)",
+                          borderLeft: "4px solid #7C3AED",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                           <div
                             style={{
-                              backgroundColor: "var(--color-purple)",
+                              backgroundColor: "#7C3AED",
                               color: "white",
                               width: 32,
                               height: 32,
@@ -639,6 +661,7 @@ export default function DishDetailPage() {
                               alignItems: "center",
                               justifyContent: "center",
                               fontWeight: 700,
+                              fontSize: 14,
                               flexShrink: 0,
                             }}
                           >
@@ -650,7 +673,7 @@ export default function DishDetailPage() {
                             </p>
                             {step.duration && (
                               <p style={{ margin: 0, fontSize: 12, color: "#6B7280" }}>
-                                ⏱️ {step.duration} {t("minutes") }
+                                ⏱️ {step.duration} min
                               </p>
                             )}
                           </div>
@@ -674,7 +697,7 @@ export default function DishDetailPage() {
                     width: "100%",
                   }}
                 >
-                  {t("common.close") || "Close"}
+                  {t("common.close")}
                 </button>
               </div>
             </div>
