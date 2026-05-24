@@ -9,7 +9,6 @@ import DishDetailPage from "../pages/DishDetailPage";
 import IngredientsPage from "../pages/IngredientsPage";
 import NewIngredientPage from "../pages/NewIngredientPage";
 import OrderPage from "../pages/OrderPage";
-import TablesPage from "../pages/TablePage";
 import BookingsPage from "../pages/BookingPage";
 import RecipeCreatePage from "../pages/DishCreatePage";
 import AllComponents from "../pages/AllComponents";
@@ -38,15 +37,6 @@ export function AppRoutes() {
           }
         />
         
-        <Route
-          path="/tables"
-          element={
-            <ProtectedRoute>
-              <TablesPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/bookings"
           element={

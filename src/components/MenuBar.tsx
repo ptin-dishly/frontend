@@ -5,7 +5,6 @@ import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
 import { FaClipboardList, FaCalendarCheck } from "react-icons/fa";
 import { GiCardboardBoxClosed } from "react-icons/gi";
-import { BsForkKnife } from "react-icons/bs";
 import { MdMenuBook, MdOutlineDinnerDining } from "react-icons/md";
 import { HiOutlineQrCode } from "react-icons/hi2";
 import QRCode from "react-qr-code";
@@ -54,7 +53,6 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
   const menuItemsByRole: Record<string, MenuItem[]> = {
     admin: [
       { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
-      { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
       { label: t("nav.orders"), route: "/orders", icon: FaClipboardList },
       { label: t("nav.bookings"), route: "/bookings", icon: FaCalendarCheck },
       { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
@@ -67,12 +65,10 @@ export default function MenuBar({ role, fixed = true }: MenuBarProps) {
     ],
     waiter: [
       { label: t("nav.dashboard"), route: "/dashboard", icon: RxDashboard },
-      { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
       { label: t("nav.orders"), route: "/orders", icon: FaClipboardList },
       { label: t("nav.menus"), route: "/menus", icon: MdMenuBook },
     ],
     sales: [
-      { label: t("nav.tables"), route: "/tables", icon: BsForkKnife },
       { label: t("nav.bookings"), route: "/bookings", icon: FaCalendarCheck },
     ],
   };
