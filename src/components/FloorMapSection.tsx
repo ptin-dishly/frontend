@@ -389,7 +389,14 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
           const filtered = myEstablishmentId
             ? items.filter(i => i.establishmentId === myEstablishmentId)
             : items;
-          setMenuItems(filtered);
+          const seen = new Map<string, ApiMenuItem>();
+          for (const item of filtered) {
+            const existing = seen.get(item.recipeId);
+            if (!existing || (item.isAvailable && !existing.isAvailable)) {
+              seen.set(item.recipeId, item);
+            }
+          }
+          setMenuItems([...seen.values()]);
         })
         .catch(() => { });
       apiFetch<string[]>("/orders/active-tables")
