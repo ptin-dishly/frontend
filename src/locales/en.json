@@ -171,7 +171,7 @@
   "newIngredient": {
     "title": "Create New Ingredient",
     "backToIngredients": "Back to Ingredients",
-    "name": "Ingredient Name *",
+    "name": "Ingredient Name",
     "namePlaceholder": "e.g., Lasagna pasta",
     "description": "Description",
     "descriptionPlaceholder": "e.g., Fresh ripe tomato",
@@ -182,12 +182,7 @@
     "creationFailed": "Failed to create ingredient",
     "creationError": "Error creating ingredient",
     "noAllergensAvailable": "No allergens available",
-    "selectedAllergens": "{{count}} allergen(s) selected",
-    "descriptionPlaceholder": "Optional description",
-    "createButton": "Create Ingredient",
-    "creating": "Creating...",
-    "backendNotice": "This feature will be saved to the backend once the endpoint is ready.",
-    "fillInName": "Please fill in ingredient name"
+    "selectedAllergens": "{{count}} allergen(s) selected"
   },
   "orders": {
     "title": "Kitchen Orders",
