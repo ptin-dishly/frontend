@@ -418,7 +418,7 @@ export default function DishDetailPage() {
                   />
                 ) : (
                   <p style={{ margin: "8px 0 0", fontSize: 16, color: "#0F172A", fontWeight: 600 }}>
-                    {dish.portionSizeKg} kg
+                    {Number(dish.portionSizeKg).toFixed(2)} kg
                   </p>
                 )}
               </div>
