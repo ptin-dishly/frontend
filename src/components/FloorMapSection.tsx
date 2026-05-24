@@ -1046,6 +1046,7 @@ export default function FloorMapSection({ onOrderChange }: { onOrderChange?: () 
                       showToast("Cadira afegida"); return;
                     }
                     setSelId(table.id); setSelType("table");
+                    pushHistory();
                     dragRef.current = { type: "table", id: table.id, ox: e.clientX - table.x, oy: e.clientY - table.y };
                   }}
                   onClick={e => {
@@ -1463,7 +1464,8 @@ function NewOrderForm({ tableNumber, cartItems, menuItems, onAddDish, onRemoveIt
     onConfirm: () => void;
     onBack: () => void;
   }) {
-  const categories = [...new Set(menuItems.map(m => m.category))];
+  const CATEGORY_ORDER = ["entrante", "primer_plato", "segundo_plato", "postre", "salsa", "bebida"];
+  const categories = CATEGORY_ORDER.filter(cat => menuItems.some(m => m.category === cat));
   const [activeCat, setActiveCat] = useState(categories[0] ?? "");
   // Modal al·lèrgen: plat pendent de confirmar
   const [pendingItem, setPendingItem] = useState<ApiMenuItem | null>(null);
