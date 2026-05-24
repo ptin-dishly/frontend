@@ -166,19 +166,23 @@
     "newIngredient": "Nou ingredient",
     "all": "Tots",
     "category": "Categoria",
-    "allergen": "Al·lèrgen"
+    "allergen": "Al·lèrgen",
+    "deleteConfirm": "¿Estàs segur de que vols eliminar aquest ingredient?"
   },
-"newIngredient": {
+  "newIngredient": {
     "title": "Crear Nou Ingredient",
     "name": "Nom de l'ingredient",
     "namePlaceholder": "ex., Tomàquet",
     "description": "Descripció",
-    "isActive": "Actiu",
     "descriptionPlaceholder": "ex., Tomàquet fresc i madur",
+    "isActive": "Actiu",
+    "allergens": "Alérgenes",
     "nameRequired": "El nom de l'ingredient és obligatori",
     "createdSuccess": "Ingredient creat exitosament",
     "creationFailed": "Error al crear l'ingredient",
-    "creationError": "Error al crear l'ingredient"
+    "creationError": "Error al crear l'ingredient",
+    "noAllergensAvailable": "No hi ha alérgenes disponibles",
+    "selectedAllergens": "{{count}} alérgene(s) seleccionat(s)"
   },
   "orders": {
     "title": "Comandes de Cuina",

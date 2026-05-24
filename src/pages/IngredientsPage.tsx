@@ -27,6 +27,7 @@ export default function IngredientsPage() {
   const userRole = (user?.role || "admin") as "admin" | "kitchen" | "waiter" | "sales";
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isAdmin = userRole === "admin";
 
   if (!["admin", "kitchen"].includes(userRole)) {
     navigate("/dashboard");
@@ -43,6 +44,7 @@ export default function IngredientsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<Partial<Ingredient> | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [ingredientAllergens, setIngredientAllergens] = useState<Record<string, Allergen[]>>({});
 
   const allergenImageMap: Record<string, string> = {
@@ -140,6 +142,25 @@ export default function IngredientsPage() {
     setEditingData(null);
   };
 
+  const handleDelete = async (ingredientId: string) => {
+    if (!confirm(t("ingredients.deleteConfirm"))) return;
+
+    setDeletingId(ingredientId);
+    try {
+      const res = await ingredientService.delete(ingredientId);
+      if (res.success) {
+        setIngredients((prev) => prev.filter((i) => i.id !== ingredientId));
+      } else {
+        setError("Failed to delete ingredient");
+      }
+    } catch (err) {
+      console.error("Error deleting ingredient:", err);
+      setError("Error deleting ingredient");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
       <MenuBar role={userRole} />
@@ -180,6 +201,16 @@ export default function IngredientsPage() {
               placeholder={t("ingredients.allergen")}
             />
           </div>
+
+          {/* Botón crear - SOLO ADMIN */}
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/ingredients/new")}
+              style={{ backgroundColor: "var(--color-green)", color: "white", border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}
+            >
+              {t("ingredients.newIngredient")}
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -188,20 +219,22 @@ export default function IngredientsPage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-            <div
-              key="new-ingredient"
-              style={{ backgroundColor: "var(--color-green)", borderRadius: 12, border: "2px dashed var(--color-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", padding: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s", minHeight: 280 }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; e.currentTarget.style.borderColor = "#16A34A"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--color-green)"; e.currentTarget.style.borderColor = "var(--color-green)"; }}
-              onClick={() => navigate("/ingredients/new")}
-            >
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 40, marginBottom: 8, color: "white", fontWeight: 700 }}>+</div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "white" }}>
-                  {t("ingredients.newIngredient")}
-                </p>
+            {/* Card crear - SOLO ADMIN */}
+            {isAdmin && (
+              <div
+                style={{ backgroundColor: "var(--color-green)", borderRadius: 12, border: "2px dashed var(--color-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", padding: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s", minHeight: 280 }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; e.currentTarget.style.borderColor = "#16A34A"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--color-green)"; e.currentTarget.style.borderColor = "var(--color-green)"; }}
+                onClick={() => navigate("/ingredients/new")}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 40, marginBottom: 8, color: "white", fontWeight: 700 }}>+</div>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "white" }}>
+                    {t("ingredients.newIngredient")}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             {filteredIngredients.length === 0 ? (
               <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#6B7280" }}>
@@ -266,9 +299,20 @@ export default function IngredientsPage() {
                           )}
                         </div>
 
-                        <button onClick={() => handleEdit(ingredient)} style={{ width: "100%", padding: "6px 12px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, marginTop: "auto" }}>
-                          {t("common.edit")}
-                        </button>
+                        {/* Botones - SOLO ADMIN */}
+                        {isAdmin ? (
+                          <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+                            <button onClick={() => handleEdit(ingredient)} style={{ flex: 1, padding: "6px 12px", backgroundColor: "#7C3AED", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                              {t("common.edit")}
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(ingredient.id)} 
+                              disabled={deletingId === ingredient.id}
+                              style={{ flex: 1, padding: "6px 12px", backgroundColor: "#EF4444", color: "white", border: "none", borderRadius: 6, cursor: deletingId === ingredient.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, opacity: deletingId === ingredient.id ? 0.6 : 1 }}>
+                              {deletingId === ingredient.id ? t("common.deleting") : t("common.delete")}
+                            </button>
+                          </div>
+                        ) : null}
                       </>
                     )}
                   </div>

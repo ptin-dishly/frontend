@@ -166,19 +166,23 @@
     "newIngredient": "New ingredient",
     "all": "All",
     "category": "Category",
-    "allergen": "Allergen"
+    "allergen": "Allergen",
+    "deleteConfirm": "Are you sure you want to delete this ingredient?"
   },
   "newIngredient": {
     "title": "Create New Ingredient",
     "name": "Ingredient Name",
     "namePlaceholder": "e.g., Tomato",
     "description": "Description",
-    "isActive": "Active",
     "descriptionPlaceholder": "e.g., Fresh ripe tomato",
+    "isActive": "Active",
+    "allergens": "Allergens",
     "nameRequired": "Ingredient name is required",
     "createdSuccess": "Ingredient created successfully",
     "creationFailed": "Failed to create ingredient",
-    "creationError": "Error creating ingredient"
+    "creationError": "Error creating ingredient",
+    "noAllergensAvailable": "No allergens available",
+    "selectedAllergens": "{{count}} allergen(s) selected"
   },
   "orders": {
     "title": "Kitchen Orders",

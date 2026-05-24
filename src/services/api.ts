@@ -180,7 +180,7 @@ export const userService = {
 };
 
 // ============================================================================
-// ALLERGENS
+// ALLERGENS I INGREDIENTS
 // ============================================================================
 
 export interface Allergen {
@@ -212,6 +212,16 @@ export interface Ingredient {
   allergens?: IngredientAllergen[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateIngredientPayload {
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  allergens?: Array<{
+    allergenId: string;
+    presence?: string;
+  }>;
 }
 
 export const allergenService = {
@@ -248,7 +258,7 @@ export const ingredientService = {
     api<IngredientAllergen[]>(`/ingredients/${ingredientId}/allergens`),
   search: (q: string) =>
     api<Ingredient[]>(`/ingredients/search?q=${encodeURIComponent(q)}`),
-  create: (data: Partial<Ingredient>) =>
+  create: (data: CreateIngredientPayload) =>
     api<Ingredient>("/ingredients", {
       method: "POST",
       body: JSON.stringify(data),
@@ -672,20 +682,24 @@ export interface RecipeStep {
 }
 
 export const recipeStepService = {
-  getByRecipe: (recipeId: string) =>
-    api<RecipeStep[]>(`/recipes/${recipeId}/steps`),
+  getByRecipe: (recipeId: string) => 
+    api<RecipeStep[]>(`/recipe-steps/${recipeId}/steps`), // ← USAR LA RUTA DEL BACKEND
+  
   getById: (id: string) =>
     api<RecipeStep>(`/recipe-steps/${id}`),
+  
   create: (data: Omit<RecipeStep, "id">) =>
     api<RecipeStep>("/recipe-steps", {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  
   update: (id: string, data: Partial<RecipeStep>) =>
     api<RecipeStep>(`/recipe-steps/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  
   delete: (id: string) =>
     api<void>(`/recipe-steps/${id}`, {
       method: "DELETE",
